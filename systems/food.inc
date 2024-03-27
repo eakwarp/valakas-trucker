@@ -14,18 +14,24 @@ new FoodIcon[MAX_FOOD];
 
 stock LoadFood(i)
 {
-    new query[255],Field[255];
+    new query[255];
 	format(query,sizeof(query),"SELECT foodName, foodEnX, foodEnY, foodEnZ, foodInt FROM foods WHERE id=%d",i);
-	mysql_query(query);
-	mysql_store_result();
-	if(mysql_fetch_row_format(Field))
+	mysql_tquery(MySQL, query, "SQL_LoadFood", "d", i);
+	return 1;
+}
+forward SQL_LoadFood(i);
+public SQL_LoadFood(i)
+{
+	new rows;
+	cache_get_row_count(rows);
+	if(rows>0)
 	{
-		sscanf(Field,"p<|>s[64]fffd",
-		FoodInfo[i][foodName],
-		FoodInfo[i][foodEnX],
-		FoodInfo[i][foodEnY],
-		FoodInfo[i][foodEnZ],
-		FoodInfo[i][foodInt]);
+		//sscanf(Field,"p<|>s[64]fffd",
+		cache_get_value_name(0,"foodName",FoodInfo[i][foodName],64);
+		cache_get_value_name_float(0,"foodEnX",FoodInfo[i][foodEnX]);
+		cache_get_value_name_float(0,"foodEnY",FoodInfo[i][foodEnY]);
+		cache_get_value_name_float(0,"foodEnZ",FoodInfo[i][foodEnZ]);
+		cache_get_value_name_int(0,"foodInt",FoodInfo[i][foodInt]);
 	    FoodInfo[i][foodValid]=1;
 	    FoodLabel[i]=CreateDynamic3DTextLabel(FoodInfo[i][foodName], COLOR_GREEN, FoodInfo[i][foodEnX],
 		FoodInfo[i][foodEnY],
@@ -39,7 +45,6 @@ stock LoadFood(i)
  	}
  	else
  	    FoodInfo[i][foodValid]=0;
-	mysql_free_result();
 	return 1;
 }
 stock FoodInit()
@@ -60,7 +65,7 @@ stock SaveFood(i)
 		FoodInfo[i][foodEnZ],
 		FoodInfo[i][foodInt],
 		i);
-		mysql_query(query);
+		mysql_query(MySQL, query, false);
 		DestroyDynamic3DTextLabel(FoodLabel[i]);
 		FoodLabel[i]=CreateDynamic3DTextLabel(HotelInfo[i][hotelName], COLOR_GREEN, FoodInfo[i][foodEnX],
 		FoodInfo[i][foodEnY],
@@ -91,7 +96,7 @@ stock CreateFood(playerid,interior,name[])
 			FoodInfo[i][foodEnY],
 			FoodInfo[i][foodEnZ],
 			interior);
-			mysql_query(query);
+			mysql_query(MySQL, query, false);
 			LoadFood(i);
 			return i;
 		}
@@ -176,7 +181,7 @@ COMMAND:fooddelete(playerid,params[])
 	DestroyDynamicPickup(FoodPickup[i]);
 	DestroyDynamicMapIcon(FoodIcon[i]);
     format(str,sizeof(str),"DELETE FROM foods WHERE id=%d",i);
-    mysql_query(str);
+    mysql_query(MySQL, str, false);
 	format(str,sizeof(str),"Вы удалили забегаловку %d",i);
 	SendClientMessage(playerid, COLOR_GRAD2, str);
 	return 1;

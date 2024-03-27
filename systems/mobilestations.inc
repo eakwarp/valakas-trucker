@@ -10,23 +10,28 @@ enum mobilestation
 new MobileStation[MAX_MOBILESTATION][mobilestation];
 stock LoadMobileStation(i)
 {
-    new query[255],Field[255];
+    new query[255];
 	format(query,sizeof(query),"SELECT mobilestationX, mobilestationY, mobilestationZ, mobilestationRad FROM mobilestations WHERE id=%d",i);
-	mysql_query(query);
-	mysql_store_result();
-	if(mysql_fetch_row_format(Field))
+	mysql_tquery(MySQL, query, "SQL_LoadMS", "d", i);
+	return 1;
+}
+forward SQL_LoadMS(i);
+public SQL_LoadMS(i)
+{
+	new rows;
+	cache_get_row_count(rows);
+	if(rows>0)
 	{
-		sscanf(Field,"p<|>ffff",
-		MobileStation[i][mobilestationX],
-		MobileStation[i][mobilestationY],
-		MobileStation[i][mobilestationZ],
-		MobileStation[i][mobilestationRad]);
+		//sscanf(Field,"p<|>ffff",
+		cache_get_value_name_float(0,"mobilestationX",MobileStation[i][mobilestationX]);
+		cache_get_value_name_float(0,"mobilestationY",MobileStation[i][mobilestationY]);
+		cache_get_value_name_float(0,"mobilestationZ",MobileStation[i][mobilestationZ]);
+		cache_get_value_name_float(0,"mobilestationRad",MobileStation[i][mobilestationRad]);
 	    MobileStation[i][mobilestationValid]=1;
 	   	MobileStation[i][mobilestationObject]=CreateDynamicObject(3763,MobileStation[i][mobilestationX],MobileStation[i][mobilestationY],MobileStation[i][mobilestationZ],0.0,0.0,0.0);
 	}
 	else
 	    MobileStation[i][mobilestationValid]=0;
-	mysql_free_result();
 	return 1;
 }
 stock MobileStationInit()
@@ -48,7 +53,7 @@ stock SaveMobileStation(i)
 		i);
 		DestroyDynamicObject(MobileStation[i][mobilestationObject]);
 		MobileStation[i][mobilestationObject]=CreateDynamicObject(3763,MobileStation[i][mobilestationX],MobileStation[i][mobilestationY],MobileStation[i][mobilestationZ],0.0,0.0,0.0);
-		mysql_query(query);
+		mysql_query(MySQL, query, false);
 	}
 	return 1;
 }
@@ -74,7 +79,7 @@ COMMAND:mobilestationcreate(playerid,params[])
 			MobileStation[i][mobilestationZ]+3.0,
 			MobileStation[i][mobilestationRad],
 			i);
-			mysql_query(query);
+			mysql_query(MySQL, query, false);
 			LoadMobileStation(i);
 			new str[128];
 			format(str,sizeof(str),"Вы создали мобильную башню %d, радиус вещания %f",i,rad);
@@ -134,7 +139,7 @@ COMMAND:mobilestationdelete(playerid,params[])
     MobileStation[i][mobilestationValid]=0;
     DestroyDynamicObject(MobileStation[i][mobilestationObject]);
     format(str,sizeof(str),"DELETE FROM mobilestations WHERE id=%d",i);
-    mysql_query(str);
+    mysql_query(MySQL, str, false);
 	format(str,sizeof(str),"Вы удалили мобильную башню %d",i);
 	SendClientMessage(playerid, COLOR_GRAD2, str);
 	return 1;

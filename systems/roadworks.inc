@@ -14,20 +14,25 @@ new RoadworkObject[MAX_ROADWORKS][MAX_ROADWORK_OBJECT];
 new RoadworkVehicle[MAX_ROADWORKS][MAX_ROADWORK_OBJECT];
 stock LoadRoadwork(i)
 {
-    new query[255],Field[255];
+    new query[255];
 	format(query,sizeof(query),"SELECT roadworkName, roadworkFileID FROM roadworks WHERE id=%d",i);
-	mysql_query(query);
-	mysql_store_result();
-	if(mysql_fetch_row_format(Field))
+	mysql_tquery(MySQL, query, "SQL_LoadRoadwork", "d", i);
+	return 1;
+}
+forward SQL_LoadRoadwork(i);
+public SQL_LoadRoadwork(i)
+{
+	new rows;
+	cache_get_row_count(rows);
+	if(rows>0)
 	{
-		sscanf(Field,"p<|>s[255]i",
-		RoadworkInfo[i][roadworkName],
-        RoadworkInfo[i][roadworkFileID]);
+		//sscanf(Field,"p<|>s[255]i",
+		cache_get_value_name(0,"roadworkName",RoadworkInfo[i][roadworkName],255);
+        cache_get_value_name_int(0,"roadworkFileID",RoadworkInfo[i][roadworkFileID]);
 		RoadworkInfo[i][roadworkValid]=1;
 	}
 	else
 	    RoadworkInfo[i][roadworkValid]=0;
-	mysql_free_result();
 	return 1;
 }
 stock RoadworkInit()
@@ -47,7 +52,7 @@ stock SaveRoadwork(i)
 		RoadworkInfo[i][roadworkName],
         RoadworkInfo[i][roadworkFileID],
 		i);
-		mysql_query(query);
+		mysql_query(MySQL, query, false);
 	}
 	return 1;
 }
@@ -61,7 +66,7 @@ stock RoadworkCreate(id,name[])
 		    format(query,sizeof(query),"INSERT INTO roadworks SET roadworkName='%s', roadworkFileID=%d, id=%d",
 		    name,
 		    id,i);
-		    mysql_query(query);
+		    mysql_query(MySQL, query, false);
 		    LoadRoadwork(i);
 		    return i;
 		}
@@ -121,7 +126,7 @@ COMMAND:roadworkdelete(playerid,params[])
 	if(RoadworkInfo[i][roadworkCreate])
 		DeleteRoadObjects(i);
 	format(query,sizeof(query),"DELETE FROM roadworks WHERE id=%d",i);
-	mysql_query(query);
+	mysql_query(MySQL, query, false);
 	format(query,sizeof(query),"вы удалили дорожные работы %d",i);
 	return 1;
 }

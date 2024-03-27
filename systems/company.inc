@@ -10,22 +10,27 @@ enum companyinfo
 new CompanyInfo[MAX_COMPANY][companyinfo];
 stock LoadCompany(i)
 {
-    new query[255],Field[255];
+    new query[255];
 	format(query,sizeof(query),"SELECT companyOwner, companyName, companyOfficeID, companyBank FROM company WHERE id=%d",i);
-	mysql_query(query);
-	mysql_store_result();
-	if(mysql_fetch_row_format(Field))
+	mysql_tquery(MySQL, query, "SQL_LoadCompany", "d", i);
+	return 1;
+}
+forward SQL_LoadCompany(i);
+public SQL_LoadCompany(i)
+{
+	new rows;
+	cache_get_row_count(rows);
+	if(rows>0)
 	{
-		sscanf(Field,"p<|>s[24]s[64]i",
-		CompanyInfo[i][companyOwner],
-		CompanyInfo[i][companyName],
-		CompanyInfo[i][companyOfficeID],
-		CompanyInfo[i][companyBank]);
+		//sscanf(Field,"p<|>s[24]s[64]i",
+		cache_get_value_name(0,"companyOwner",CompanyInfo[i][companyOwner],24);
+		cache_get_value_name(0,"companyName",CompanyInfo[i][companyName],64);
+		cache_get_value_name_int(0,"companyOfficeID",CompanyInfo[i][companyOfficeID]);
+		cache_get_value_name_int(0,"companyBank",CompanyInfo[i][companyBank]);
 		CompanyInfo[i][companyValid]=1;
 	}
 	else
 	    CompanyInfo[i][companyValid]=0;
-	mysql_free_result();
 	return 1;
 }
 stock CompanyInit()
@@ -45,7 +50,7 @@ stock SaveCompany(i)
 		CompanyInfo[i][companyOfficeID],
 		CompanyInfo[i][companyBank],
 		i);
-		mysql_query(query);
+		mysql_query(MySQL, query, false);
 	}
 	return 1;
 }
@@ -62,7 +67,7 @@ stock CreateCompany(playerid,name[])
 			name,
 			-1,
 			i);
-			mysql_query(query);
+			mysql_query(MySQL, query, false);
 			LoadCompany(i);
 			return i;
 		}
@@ -97,7 +102,7 @@ COMMAND:closecompany(playerid,params[])
 	    new str[255];
 	    format(str,sizeof(str),"UPDATE players SET pCompany='-1', pCompanyTime=0 WHERE online=0 AND pCompany=%d",
 	    PlayerInfo[playerid][pCompany]);
-	    mysql_query(str);
+	    mysql_query(MySQL, str, false);
 	    foreach(Player,i)
 		{
 		    if(PlayerInfo[i][pCompany]==PlayerInfo[playerid][pCompany])
@@ -145,14 +150,13 @@ COMMAND:invite(playerid,params[])
 
 stock CheckCompanyMembersNum(i)
 {
-	new num;
 	new str[255];
 	format(str,sizeof(str),"SELECT id FROM players WHERE pCompany=%d",i);
-    mysql_query(str);
-    mysql_store_result();
-	num=mysql_num_rows();
-	mysql_free_result();
-	return num;
+    new Cache:result=mysql_query(MySQL,str);
+    new rows;
+	cache_get_row_count(rows);
+	cache_delete(result);
+	return rows;
 }
 stock CheckCompanyMaxMembers(playerid)
 {
@@ -201,8 +205,8 @@ stock UpdateCompanys()
 	    if(PlayerInfo[i][pCompanyTime]>0)
 	        PlayerInfo[i][pCompanyTime]--;
 	}
-	mysql_query("UPDATE players SET 'pCompanyTime'-- WHERE pCompanyTime>0 AND online=0");
-	mysql_query("UPDATE players SET pCompany='-1' WHERE pCompanyTime=0 AND online=0 AND pCompany!='-1'");
+	mysql_query(MySQL,"UPDATE players SET 'pCompanyTime'-- WHERE pCompanyTime>0 AND online=0",false);
+	mysql_query(MySQL,"UPDATE players SET pCompany='-1' WHERE pCompanyTime=0 AND online=0 AND pCompany!='-1'",false);
 	return 1;
 }
 COMMAND:companywithdraw(playerid,params[])

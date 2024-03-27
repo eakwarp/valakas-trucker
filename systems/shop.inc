@@ -14,18 +14,24 @@ new MagazinePickup[MAX_MAGAZINE];
 new MagazineIcon[MAX_MAGAZINE];
 stock LoadMagazine(i)
 {
-	new query[255],Field[255];
+	new query[255];
 	format(query,sizeof(query),"SELECT magazineName, magazineX, magazineY, magazineZ, magazineInt FROM magazines WHERE id=%d",i);
-	mysql_query(query);
-	mysql_store_result();
-	if(mysql_fetch_row_format(Field))
+	mysql_tquery(MySQL, query, "SQL_LoadMagazine", "d", i);
+	return 1;
+}
+forward SQL_LoadMagazine(i);
+public SQL_LoadMagazine(i)
+{
+	new rows;
+	cache_get_row_count(rows);
+	if(rows>0)
 	{
-		sscanf(Field,"p<|>s[64]fffi",
-		MagazineInfo[i][magazineName],
-		MagazineInfo[i][magazineX],
-		MagazineInfo[i][magazineY],
-		MagazineInfo[i][magazineZ],
-		MagazineInfo[i][magazineInt]);
+		//sscanf(Field,"p<|>s[64]fffi",
+		cache_get_value_name(0,"magazineName",MagazineInfo[i][magazineName],64);
+		cache_get_value_name_float(0,"magazineX",MagazineInfo[i][magazineX]);
+		cache_get_value_name_float(0,"magazineY",MagazineInfo[i][magazineY]);
+		cache_get_value_name_float(0,"magazineZ",MagazineInfo[i][magazineZ]);
+		cache_get_value_name_int(0,"magazineInt",MagazineInfo[i][magazineInt]);
 	    MagazineInfo[i][magazineValid]=1;
 		MagazineLabel[i]=CreateDynamic3DTextLabel(MagazineInfo[i][magazineName], COLOR_GREEN, MagazineInfo[i][magazineX],MagazineInfo[i][magazineY],MagazineInfo[i][magazineZ], 15.0);
 		MagazinePickup[i]=CreateDynamicPickup(19135,2,MagazineInfo[i][magazineX],MagazineInfo[i][magazineY],MagazineInfo[i][magazineZ]);
@@ -33,7 +39,6 @@ stock LoadMagazine(i)
 	}
 	else
 	    MagazineInfo[i][magazineValid]=0;
-	mysql_free_result();
 	return 1;
 }
 stock MagazineInit()
@@ -54,7 +59,7 @@ stock SaveMagazine(i)
 		MagazineInfo[i][magazineZ],
 		MagazineInfo[i][magazineInt],
 		i);
-		mysql_query(query);
+		mysql_query(MySQL, query, false);
 		DestroyDynamic3DTextLabel(MagazineLabel[i]);
 		MagazineLabel[i]=CreateDynamic3DTextLabel(MagazineInfo[i][magazineName], COLOR_GREEN, MagazineInfo[i][magazineX],MagazineInfo[i][magazineY],MagazineInfo[i][magazineZ], 15.0);
 		DestroyDynamicPickup(MagazinePickup[i]);
@@ -82,7 +87,7 @@ stock CreateMagazine(playerid,interior,name[])
 			MagazineInfo[i][magazineY],
 			MagazineInfo[i][magazineZ],
 			interior);
-			mysql_query(query);
+			mysql_query(MySQL, query, false);
 			LoadMagazine(i);
 			return i;
 		}
@@ -166,7 +171,7 @@ COMMAND:magazinedelete(playerid,params[])
 	DestroyDynamicPickup(MagazinePickup[i]);
 	DestroyDynamicMapIcon(MagazineIcon[i]);
     format(str,sizeof(str),"DELETE FROM magazines WHERE id=%d",i);
-    mysql_query(str);
+    mysql_query(MySQL, str, false);
 	format(str,sizeof(str),"Вы удалили магазин %d",i);
 	SendClientMessage(playerid, COLOR_GRAD2, str);
 	return 1;

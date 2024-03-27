@@ -14,20 +14,26 @@ enum trailerinfo
 new TrailerInfo[MAX_TRAILERS][trailerinfo];
 stock LoadTrailer(i)
 {
-    new query[255],Field[255];
+    new query[255];
 	format(query,sizeof(query),"SELECT tiModel, tiX, tiY, tiZ, tiRot, tiColor1, tiColor2 FROM trailers WHERE id=%d",i);
-	mysql_query(query);
-	mysql_store_result();
-	if(mysql_fetch_row_format(Field))
+	mysql_tquery(MySQL, query, "SQL_LoadTrailer", "d", i);
+	return 1;
+}
+forward SQL_LoadTrailer(i);
+public SQL_LoadTrailer(i)
+{
+	new rows;
+	cache_get_row_count(rows);
+	if(rows>0)
 	{
-		sscanf(Field,"p<|>dffffdd",
-		TrailerInfo[i][tiModel],
-		TrailerInfo[i][tiX],
-		TrailerInfo[i][tiY],
-		TrailerInfo[i][tiZ],
-		TrailerInfo[i][tiRot],
-		TrailerInfo[i][tiColor1],
-		TrailerInfo[i][tiColor2]);
+		//sscanf(Field,"p<|>dffffdd",
+		cache_get_value_name_int(0,"tiModel",TrailerInfo[i][tiModel]);
+		cache_get_value_name_float(0,"tiX",TrailerInfo[i][tiX]);
+		cache_get_value_name_float(0,"tiY",TrailerInfo[i][tiY]);
+		cache_get_value_name_float(0,"tiZ",TrailerInfo[i][tiZ]);
+		cache_get_value_name_float(0,"tiRot",TrailerInfo[i][tiRot]);
+		cache_get_value_name_int(0,"tiColor1",TrailerInfo[i][tiColor1]);
+		cache_get_value_name_int(0,"tiColor2",TrailerInfo[i][tiColor2]);
 		TrailerInfo[i][tiValid]=1;
 		TrailerInfo[i][tiCarID]=CreateVehicle(TrailerInfo[i][tiModel],
 		TrailerInfo[i][tiX],
@@ -41,7 +47,6 @@ stock LoadTrailer(i)
 	}
 	else
 	    TrailerInfo[i][tiValid]=0;
-	mysql_free_result();
 	return 1;
 }
 stock TrailerInit()
@@ -80,7 +85,7 @@ stock CreateTrailer(playerid,model,color1,color2)
 			TrailerInfo[i][tiRot],
 			color1,
 			color2);
-			mysql_query(query);
+			mysql_query(MySQL, query, false);
 			LoadTrailer(i);
 			return i;
 		}
@@ -121,7 +126,7 @@ stock SaveTrailer(i)
 		TrailerInfo[i][tiColor1],
 		TrailerInfo[i][tiColor2],
 		i);
-		mysql_query(query);
+		mysql_query(MySQL, query, false);
 	}
 	return 1;
 }

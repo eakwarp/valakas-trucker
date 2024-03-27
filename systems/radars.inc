@@ -16,29 +16,34 @@ enum radarinfo
 new RadarInfo[MAX_RADAR][radarinfo];
 stock LoadRadar(i)
 {
-	new query[255],Field[255];
+	new query[255];
 	format(query,sizeof(query),"SELECT radarObjX, radarObjY, radarObjZ, radarObjRot, radarZoneX, radarZoneY, radarZoneZ, radarZoneRad, radarMaxSpeed FROM radars WHERE id=%d",i);
-	mysql_query(query);
-	mysql_store_result();
-	if(mysql_fetch_row_format(Field))
+	mysql_tquery(MySQL, query, "SQL_LoadRadar", "d", i);
+	return 1;
+}
+forward SQL_LoadRadar(i);
+public SQL_LoadRadar(i)
+{
+	new rows;
+	cache_get_row_count(rows);
+	if(rows>0)
 	{
-		sscanf(Field,"p<|>fffffffff",
-        RadarInfo[i][radarObjX],
-        RadarInfo[i][radarObjY],
-        RadarInfo[i][radarObjZ],
-        RadarInfo[i][radarObjRot],
-		RadarInfo[i][radarZoneX],
-		RadarInfo[i][radarZoneY],
-		RadarInfo[i][radarZoneZ],
-		RadarInfo[i][radarZoneRad],
-		RadarInfo[i][radarMaxSpeed]);
+		//sscanf(Field,"p<|>fffffffff",
+        cache_get_value_name_float(0,"radarObjX",RadarInfo[i][radarObjX]);
+        cache_get_value_name_float(0,"radarObjY",RadarInfo[i][radarObjY]);
+        cache_get_value_name_float(0,"radarObjZ",RadarInfo[i][radarObjZ]);
+        cache_get_value_name_float(0,"radarObjRot",RadarInfo[i][radarObjRot]);
+		cache_get_value_name_float(0,"radarZoneX",RadarInfo[i][radarZoneX]);
+		cache_get_value_name_float(0,"radarZoneY",RadarInfo[i][radarZoneY]);
+		cache_get_value_name_float(0,"radarZoneZ",RadarInfo[i][radarZoneZ]);
+		cache_get_value_name_float(0,"radarZoneRad",RadarInfo[i][radarZoneRad]);
+		cache_get_value_name_float(0,"radarMaxSpeed",RadarInfo[i][radarMaxSpeed]);
 		RadarInfo[i][radarValid]=1;
 		RadarInfo[i][radarObjID]=CreateDynamicObject(18880, RadarInfo[i][radarObjX],RadarInfo[i][radarObjY],RadarInfo[i][radarObjZ]-1.0,0.0,0.0,RadarInfo[i][radarObjRot]-180.0);
 
 	}
 	else
 	    RadarInfo[i][radarValid]=0;
-	mysql_free_result();
 	return 1;
 }
 stock RadarInit()
@@ -63,7 +68,7 @@ stock SaveRadar(i)
 		RadarInfo[i][radarZoneRad],
 		RadarInfo[i][radarMaxSpeed],
 		i);
-		mysql_query(query);
+		mysql_query(MySQL, query, false);
 		DestroyDynamicObject(RadarInfo[i][radarObjID]);
 		RadarInfo[i][radarObjID]=CreateDynamicObject(18880, RadarInfo[i][radarObjX],RadarInfo[i][radarObjY],RadarInfo[i][radarObjZ]-1.0,0.0,0.0,RadarInfo[i][radarObjRot]-180.0);
 	}
@@ -85,7 +90,7 @@ stock CreateRadar(playerid,Float:speed)
 	        RadarInfo[i][radarObjRot],
 	        speed,
 	        i);
-	        mysql_query(query);
+	        mysql_query(MySQL, query, false);
 	        LoadRadar(i);
 			return i;
 		}
@@ -154,7 +159,7 @@ COMMAND:radardelete(playerid,params[])
     RadarInfo[i][radarValid]=0;
     DestroyDynamicObject(RadarInfo[i][radarObjID]);
     format(str,sizeof(str),"DELETE FROM radars WHERE id=%d",i);
-    mysql_query(str);
+    mysql_query(MySQL, str, false);
 	format(str,sizeof(str),"Вы удалили радар %d",i);
 	SendClientMessage(playerid, COLOR_GRAD2, str);
 	return 1;

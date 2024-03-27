@@ -10,22 +10,28 @@ enum propinfo
 new PropInfo[MAX_PROPS][propinfo];
 stock LoadProp(i)
 {
-    new query[255],Field[255];
+    new query[255];
 	format(query,sizeof(query),"SELECT propName, propX, propY, propZ FROM props WHERE id=%d",i);
-	mysql_query(query);
-	mysql_store_result();
-	if(mysql_fetch_row_format(Field))
+	mysql_tquery(MySQL, query, "SQL_LoadProp", "d", i);
+	return 1;
+}
+forward SQL_LoadProp(i);
+public SQL_LoadProp(i)
+{
+	new rows;
+	cache_get_row_count(rows);
+	if(rows>0)
 	{
-		sscanf(Field,"p<|>s[64]fff",
-		PropInfo[i][propName],
-        PropInfo[i][propX],
-        PropInfo[i][propY],
-        PropInfo[i][propZ]);
+		//sscanf(Field,"p<|>s[64]fff",
+
+		cache_get_value_name(0,"propName",PropInfo[i][propName],64);
+        cache_get_value_name_float(0,"propX",PropInfo[i][propX]);
+        cache_get_value_name_float(0,"propY",PropInfo[i][propY]);
+        cache_get_value_name_float(0,"propZ",PropInfo[i][propZ]);
 		PropInfo[i][propValid]=1;
 	}
 	else
 	    PropInfo[i][propValid]=0;
-	mysql_free_result();
 	return 1;
 }
 stock PropInit()
@@ -45,7 +51,7 @@ stock SaveProp(i)
         PropInfo[i][propY],
         PropInfo[i][propZ],
 		i);
-		mysql_query(query);
+		mysql_query(MySQL, query, false);
 	}
 	return 1;
 }
@@ -105,7 +111,7 @@ COMMAND:propcreate(playerid, params[])
 	        PropInfo[i][propY],
 	        PropInfo[i][propZ],
 	        i);
-	        mysql_query(query);
+	        mysql_query(MySQL, query, false);
 	        LoadProp(i);
 		    format(str,sizeof(str),"Вы создали предприятие %s под id %d",PropInfo[i][propName],i);
 		    SendClientMessage(playerid, COLOR_GRAD2, str);

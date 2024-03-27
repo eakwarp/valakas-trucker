@@ -17,20 +17,26 @@ new Text3D:RepairLabel[MAX_REPAIRS];
 new RepairIcon[MAX_REPAIRS];
 stock LoadRepair(i)
 {
-	new query[255],Field[255];
+	new query[255];
 	format(query,sizeof(query),"SELECT repairX, repairY, repairZ, repairName, repairLabelX, repairLabelY, repairLabelZ FROM repairs WHERE id=%d",i);
-	mysql_query(query);
-	mysql_store_result();
-	if(mysql_fetch_row_format(Field))
+	mysql_tquery(MySQL, query, "SQL_LoadRepair", "d", i);
+	return 1;
+}
+forward SQL_LoadRepair(i);
+public SQL_LoadRepair(i)
+{
+	new rows;
+	cache_get_row_count(rows);
+	if(rows>0)
 	{
-		sscanf(Field,"p<|>fffs[64]fff",
-        RepairInfo[i][repairX],
-        RepairInfo[i][repairY],
-        RepairInfo[i][repairZ],
-        RepairInfo[i][repairName],
-        RepairInfo[i][repairLabelX],
-        RepairInfo[i][repairLabelY],
-        RepairInfo[i][repairLabelZ]);
+		//sscanf(Field,"p<|>fffs[64]fff",
+        cache_get_value_name_float(0,"repairX",RepairInfo[i][repairX]);
+        cache_get_value_name_float(0,"repairY",RepairInfo[i][repairY]);
+        cache_get_value_name_float(0,"repairZ",RepairInfo[i][repairZ]);
+		cache_get_value_name(0,"repairName",RepairInfo[i][repairName],64);
+        cache_get_value_name_float(0,"repairLabelX",RepairInfo[i][repairLabelX]);
+        cache_get_value_name_float(0,"repairLabelY",RepairInfo[i][repairLabelY]);
+        cache_get_value_name_float(0,"repairLabelZ",RepairInfo[i][repairLabelZ]);
 		RepairInfo[i][repairValid]=1;
 		RepairLabel[i]=CreateDynamic3DTextLabel(RepairInfo[i][repairName], COLOR_GREEN, RepairInfo[i][repairLabelX],
         RepairInfo[i][repairLabelY],
@@ -47,7 +53,6 @@ stock LoadRepair(i)
 	}
 	else
 	    RepairInfo[i][repairValid]=0;
-	mysql_free_result();
 	return 1;
 }
 stock RepairInit()
@@ -70,7 +75,7 @@ stock SaveRepair(i)
         RepairInfo[i][repairLabelY],
         RepairInfo[i][repairLabelZ],
 		i);
-		mysql_query(query);
+		mysql_query(MySQL, query, false);
 		DestroyDynamic3DTextLabel(GasLabel[i]);
 		RepairLabel[i]=CreateDynamic3DTextLabel(RepairInfo[i][repairName], COLOR_GREEN, RepairInfo[i][repairLabelX],
         RepairInfo[i][repairLabelY],
@@ -107,7 +112,7 @@ stock CreateRepair(playerid,name[])
 		    RepairInfo[i][repairZ],
 	        name,
 	        i);
-	        mysql_query(query);
+	        mysql_query(MySQL, query, false);
 	        LoadRepair(i);
 			return i;
 		}
@@ -179,7 +184,7 @@ COMMAND:repairdelete(playerid,params[])
     DestroyDynamicPickup(RepairInfo[i][repairPickup]);
     DestroyDynamicMapIcon(RepairIcon[i]);
     format(str,sizeof(str),"DELETE FROM repairs WHERE id=%d",i);
-    mysql_query(str);
+    mysql_query(MySQL, str, false);
 	format(str,sizeof(str),"Вы удалили ремонт %d",i);
 	SendClientMessage(playerid, COLOR_GRAD2, str);
 	return 1;

@@ -1,19 +1,25 @@
 
 stock LoadHotel(i)
 {
-    new query[255],Field[255];
+    new query[255];
 	format(query,sizeof(query),"SELECT hotelPrice, hotelEnX, hotelEnY, hotelEnZ, hotelInt, hotelName FROM holels WHERE id=%d",i);
-	mysql_query(query);
-	mysql_store_result();
-	if(mysql_fetch_row_format(Field))
+	mysql_tquery(MySQL, query, "SQL_LoadHotel", "d", i);
+	return 1;
+}
+forward SQL_LoadHotel(i);
+public SQL_LoadHotel(i)
+{
+	new rows;
+	cache_get_row_count(rows);
+	if(rows>0)
 	{
-		sscanf(Field,"p<|>dfffds[64]",
-		HotelInfo[i][hotelPrice],
-		HotelInfo[i][hotelEnX],
-		HotelInfo[i][hotelEnY],
-		HotelInfo[i][hotelEnZ],
-		HotelInfo[i][hotelInt],
-		HotelInfo[i][hotelName]);
+		//sscanf(Field,"p<|>dfffds[64]",
+		cache_get_value_name_int(0,"hotelPrice",HotelInfo[i][hotelPrice]);
+		cache_get_value_name_float(0,"hotelEnX",HotelInfo[i][hotelEnX]);
+		cache_get_value_name_float(0,"hotelEnY",HotelInfo[i][hotelEnY]);
+		cache_get_value_name_float(0,"hotelEnZ",HotelInfo[i][hotelEnZ]);
+		cache_get_value_name_int(0,"hotelInt",HotelInfo[i][hotelInt]);
+		cache_get_value_name(0,"hotelName",HotelInfo[i][hotelName],64);
 	    HotelInfo[i][hotelValid]=1;
 	    HotelLabel[i]=CreateDynamic3DTextLabel(HotelInfo[i][hotelName], COLOR_GREEN, HotelInfo[i][hotelEnX],
 		HotelInfo[i][hotelEnY],
@@ -27,7 +33,6 @@ stock LoadHotel(i)
  	}
 	else
 	    HotelInfo[i][hotelValid]=0;
-	mysql_free_result();
 	return 1;
 }
 stock HotelInit()
@@ -49,7 +54,7 @@ stock SaveHotel(i)
 		HotelInfo[i][hotelInt],
 		HotelInfo[i][hotelName],
 		i);
-		mysql_query(query);
+		mysql_query(MySQL, query, false);
 		DestroyDynamic3DTextLabel(HotelLabel[i]);
 		HotelLabel[i]=CreateDynamic3DTextLabel(HotelInfo[i][hotelName], COLOR_GREEN, HotelInfo[i][hotelEnX],
 		HotelInfo[i][hotelEnY],
@@ -81,7 +86,7 @@ stock CreateHotel(playerid,price,interior,name[])
 			HotelInfo[i][hotelEnZ],
 			interior,
 			name);
-			mysql_query(query);
+			mysql_query(MySQL, query, false);
 			LoadHotel(i);
 			return i;
 		}
@@ -165,7 +170,7 @@ COMMAND:hoteldelete(playerid,params[])
 	DestroyDynamicPickup(HotelPickup[i]);
 	DestroyDynamicMapIcon(HotelIcon[i]);
     format(str,sizeof(str),"DELETE FROM hotels WHERE id=%d",i);
-    mysql_query(str);
+    mysql_query(MySQL, str, false);
 	format(str,sizeof(str),"Вы удалили отель %d",i);
 	SendClientMessage(playerid, COLOR_GRAD2, str);
 	return 1;

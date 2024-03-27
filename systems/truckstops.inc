@@ -25,31 +25,36 @@ stock TruckStopInit()
 }
 stock LoadTruckStop(i)
 {
-    new query[255],Field[512];
+    new query[255];
 	format(query,sizeof(query),"SELECT tsName, tsX, tsY, tsZ, tsRot, tsCamX, tsCamY, tsCamZ, tsLabelX, tsLabelY, tsLabelZ FROM truckstops WHERE id=%d",i);
-	mysql_query(query);
-	mysql_store_result();
-	if(mysql_fetch_row_format(Field))
+	mysql_tquery(MySQL, query, "SQL_LoadTruckstop", "d", i);
+	return 1;
+}
+forward SQL_LoadTruckstop(i);
+public SQL_LoadTruckstop(i)
+{
+	new rows;
+	cache_get_row_count(rows);
+	if(rows>0)
 	{
-		sscanf(Field,"p<|>s[64]ffffffffff",
-		TruckStopInfo[i][tsName],
-		TruckStopInfo[i][tsX],
-		TruckStopInfo[i][tsY],
-		TruckStopInfo[i][tsZ],
-		TruckStopInfo[i][tsRot],
-		TruckStopInfo[i][tsCamX],
-		TruckStopInfo[i][tsCamY],
-		TruckStopInfo[i][tsCamZ],
-		TruckStopInfo[i][tsLabelX],
-		TruckStopInfo[i][tsLabelY],
-		TruckStopInfo[i][tsLabelZ]);
+		//sscanf(Field,"p<|>s[64]ffffffffff",
+		cache_get_value_name(0,"tsName",TruckStopInfo[i][tsName],64);
+		cache_get_value_name_float(0,"tsX",TruckStopInfo[i][tsX]);
+		cache_get_value_name_float(0,"tsY",TruckStopInfo[i][tsY]);
+		cache_get_value_name_float(0,"tsZ",TruckStopInfo[i][tsZ]);
+		cache_get_value_name_float(0,"tsRot",TruckStopInfo[i][tsRot]);
+		cache_get_value_name_float(0,"tsCamX",TruckStopInfo[i][tsCamX]);
+		cache_get_value_name_float(0,"tsCamY",TruckStopInfo[i][tsCamY]);
+		cache_get_value_name_float(0,"tsCamZ",TruckStopInfo[i][tsCamZ]);
+		cache_get_value_name_float(0,"tsLabelX",TruckStopInfo[i][tsLabelX]);
+		cache_get_value_name_float(0,"tsLabelY",TruckStopInfo[i][tsLabelY]);
+		cache_get_value_name_float(0,"tsLabelZ",TruckStopInfo[i][tsLabelZ]);
         TruckStopInfo[i][tsValid]=1;
         TruckStopLabel[i]=CreateDynamic3DTextLabel(TruckStopInfo[i][tsName], COLOR_GREEN, TruckStopInfo[i][tsLabelX],TruckStopInfo[i][tsLabelY],TruckStopInfo[i][tsLabelZ], 15.0);
 		TruckStopIcon[i]=CreateDynamicMapIcon(TruckStopInfo[i][tsX],TruckStopInfo[i][tsY],TruckStopInfo[i][tsZ],51, -1,-1,-1, -1, 250.0);
 	}
 	else
 	    TruckStopInfo[i][tsValid]=0;
-	mysql_free_result();
 	return 1;
 }
 stock SaveTruckStop(i)
@@ -70,7 +75,7 @@ stock SaveTruckStop(i)
 		TruckStopInfo[i][tsLabelY],
 		TruckStopInfo[i][tsLabelZ],
 		i);
-		mysql_query(query);
+		mysql_query(MySQL, query, false);
 		DestroyDynamic3DTextLabel(TruckStopLabel[i]);
 		TruckStopLabel[i]=CreateDynamic3DTextLabel(TruckStopInfo[i][tsName], COLOR_GREEN, TruckStopInfo[i][tsLabelX],TruckStopInfo[i][tsLabelY],TruckStopInfo[i][tsLabelZ], 15.0);
 		DestroyDynamicMapIcon(TruckStopIcon[i]);
@@ -104,7 +109,7 @@ stock TruckStopCreate(playerid,name[])
 			pos[1],
 			pos[2],
 			pos[3]);
-			mysql_query(query);
+			mysql_query(MySQL, query, false);
 			LoadTruckStop(i);
 			format(query,sizeof(query),"Вы создали трак стоп %d ( %s )",i,name);
 			SendClientMessage(playerid, COLOR_GRAD2, query);

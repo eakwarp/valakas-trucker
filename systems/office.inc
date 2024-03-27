@@ -17,30 +17,35 @@ new Text3D:OfficeLabel[MAX_OFFICE];
 new OfficePickup[MAX_OFFICE];
 stock LoadOffice(i)
 {
-    new query[255],Field[255];
+    new query[255];
 	format(query,sizeof(query),"SELECT officeName, officeOwned, officeOwner, officeCompany, officeX, officeY, officeZ, officeInt, officeLocked, officePrice FROM office WHERE id=%d",i);
-	mysql_query(query);
-	mysql_store_result();
-	if(mysql_fetch_row_format(Field))
+	mysql_tquery(MySQL, query, "SQL_LoadOffice", "d", i);
+	return 1;
+}
+forward SQL_LoadOffice(i);
+public SQL_LoadOffice(i)
+{
+	new rows;
+	cache_get_row_count(rows);
+	if(rows>0)
 	{
-		sscanf(Field,"p<|>s[64]is[24]ifffii",
-		OfficeInfo[i][officeName],
-		OfficeInfo[i][officeOwned],
-		OfficeInfo[i][officeOwner],
-		OfficeInfo[i][officeCompany],
-		OfficeInfo[i][officeX],
-		OfficeInfo[i][officeY],
-		OfficeInfo[i][officeZ],
-		OfficeInfo[i][officeInt],
-		OfficeInfo[i][officeLocked],
-		OfficeInfo[i][officePrice]);
+		//sscanf(Field,"p<|>s[64]is[24]ifffii",
+		cache_get_value_name(0,"officeName",OfficeInfo[i][officeName],64);
+		cache_get_value_name_int(0,"officeOwned",OfficeInfo[i][officeOwned]);
+		cache_get_value_name(0,"officeOwner",OfficeInfo[i][officeOwner],24);
+		cache_get_value_name_int(0,"officeCompany",OfficeInfo[i][officeCompany]);
+		cache_get_value_name_float(0,"officeX",OfficeInfo[i][officeX]);
+		cache_get_value_name_float(0,"officeY",OfficeInfo[i][officeY]);
+		cache_get_value_name_float(0,"officeZ",OfficeInfo[i][officeZ]);
+		cache_get_value_name_int(0,"officeInt",OfficeInfo[i][officeInt]);
+		cache_get_value_name_int(0,"officeLocked",OfficeInfo[i][officeLocked]);
+		cache_get_value_name_int(0,"officePrice",OfficeInfo[i][officePrice]);
 		OfficeInfo[i][officeValid]=1;
 		OfficeLabel[i]=CreateDynamic3DTextLabel(OfficeInfo[i][officeName], COLOR_GREEN, OfficeInfo[i][officeX],OfficeInfo[i][officeY],OfficeInfo[i][officeZ], 15.0);
 		OfficePickup[i]=CreateDynamicPickup(19135,2,OfficeInfo[i][officeX],OfficeInfo[i][officeY],OfficeInfo[i][officeZ]);
 	}
 	else
 	    OfficeInfo[i][officeValid]=0;
-	mysql_free_result();
 	return 1;
 }
 stock OfficeInit()
@@ -66,7 +71,7 @@ stock SaveOffice(i)
 		OfficeInfo[i][officeLocked],
 		OfficeInfo[i][officePrice],
 		i);
-		mysql_query(query);
+		mysql_query(MySQL, query, false);
 		DestroyDynamic3DTextLabel(OfficeLabel[i]);
 		DestroyDynamicPickup(OfficePickup[i]);
 		OfficeLabel[i]=CreateDynamic3DTextLabel(OfficeInfo[i][officeName], COLOR_GREEN, OfficeInfo[i][officeX],OfficeInfo[i][officeY],OfficeInfo[i][officeZ], 15.0);
@@ -94,7 +99,7 @@ stock CreateOffice(playerid,interior,name[],price)
 			OfficeInfo[i][officeZ],
 			interior,
 			price);
-			mysql_query(query);
+			mysql_query(MySQL, query, false);
 			LoadOffice(i);
 			return i;
 		}
@@ -175,7 +180,7 @@ COMMAND:officedelete(playerid,params[])
     DestroyDynamic3DTextLabel(OfficeLabel[i]);
 	DestroyDynamicPickup(OfficePickup[i]);
     format(str,sizeof(str),"DELETE FROM office WHERE id=%d",i);
-    mysql_query(str);
+    mysql_query(MySQL, str, false);
 	format(str,sizeof(str),"Вы удалили офис %d",i);
 	SendClientMessage(playerid, COLOR_GRAD2, str);
 	return 1;

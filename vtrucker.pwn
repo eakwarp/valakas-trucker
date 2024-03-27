@@ -120,10 +120,11 @@ new CarInfo[][carinfo]=
 #define MYSQL_PASS "****"
 #define MYSQL_BASE "samp"
 #define MYSQL_DEBUG 1 //1
+new MySQL:MySQL;
 
 #define INGAMEREGISTER
 
-#pragma dynamic 16384//8192
+#pragma dynamic 16384
 
 #include <a_samp>
 #include <omp>
@@ -264,26 +265,24 @@ new RealChatInfo[MAX_PLAYERS][rcInfo];
 
 stock MySQLConnect(sqlhost[], sqluser[], sqlpass[], sqldb[])
 {
+    mysql_global_options(DUPLICATE_CONNECTIONS, true);
+    new MySQLOpt:options = mysql_init_options();
+	//mysql_set_option(options, AUTO_RECONNECT, true); // отключение авто-переподключения к БД
+	//mysql_set_option(options, POOL_SIZE, 0); // отключение многопоточности (соответственно, "mysql_pquery" так же не будет работать)
+	mysql_set_option(options, SERVER_PORT, 3310); // изменение порта, по которому будет идти подключение
 	print("MYSQL: Attempting to connect to server...");
-	mysql_connect(sqlhost, sqluser, sqldb, sqlpass);
-	mysql_debug(MYSQL_DEBUG);
-	printf("(%s,%s,%s,%s)",sqlhost, sqluser, sqldb, sqlpass);
-	if(mysql_ping())
- 		return print("MYSQL: Database connection established");
+	MySQL = mysql_connect(sqlhost, sqluser,sqlpass, sqldb,options);
+	if(mysql_errno(MySQL) != 0)
+	{
+		print("MYSQL: Could not connect to server, terminating server...");
+		SendRconCommand("exit");
+		return 0;
+	}
 	else
 	{
-		print("MYSQL: Connection error, retrying...");
-		mysql_connect(sqlhost, sqluser, sqldb, sqlpass);
-		mysql_debug(MYSQL_DEBUG);
-		if(mysql_ping())
-			return print("MYSQL: Reconnection successful. We can continue as normal.");
-		else
-		{
-			print("MYSQL: Could not reconnect to server, terminating server...");
-			SendRconCommand("exit");
-			return 0;
-		}
+ 		print("MYSQL: Database connection established.");
 	}
+	return 1;
 }
 
 enum hotelinfo
@@ -360,65 +359,70 @@ enum pInfo
 new PlayerInfo[MAX_PLAYERS][pInfo];
 stock LoadPlayer(playerid)
 {
-	new query[2048],Field[1024],playername[MAX_PLAYER_NAME];
+	new query[2048],playername[MAX_PLAYER_NAME];
 	GetPlayerName(playerid,playername,sizeof(playername));
 	format(query,sizeof(query),"SELECT pAdmin, pMoney, pPoints, pPhone, pHelper, pMutedTime, pSex, pJailTime, pCarModel, pCarColor1, pCarColor2, pCarMileage, pCarX, pCarY, pCarZ, pCarRot, pSpeedoX, pSpeedoY, pTutorial, pTruckStop, pHunger, pFatigue, pBan, pModel, pCarGas, pCarDamagePanels, pCarDamageDoors, pCarDamageLights, pCarDamageTires, pCarOilFilter,");
 	format(query,sizeof(query),"%s pCarAirFilter, pCarBattary, pCarOil, pCarGaskets, pCarSpark, pCarHP, pCarFullHealth, pCarRadarDetector, pCarFuelTank, pCarRadio, pCarAdditive, pCompany, pCompanyTime, pCarNeck, pAccepted, pCarDamper FROM players WHERE Name='%s'",
 	query,
 	playername);
-	mysql_query(query);
-	mysql_store_result();
-	if(mysql_fetch_row_format(Field))
+	mysql_tquery(MySQL, query, "SQL_LoadPlayer", "d", playerid);
+}
+forward SQL_LoadPlayer(playerid);
+public SQL_LoadPlayer(playerid)
+{
+	new rows;
+	cache_get_row_count(rows);
+	if(rows>0)
 	{
-		sscanf(Field,"p<|>dddddddddddfffffddddffddfddddffffffdddddddddd",
-		PlayerInfo[playerid][pAdmin],
-		PlayerInfo[playerid][pMoney],
-		PlayerInfo[playerid][pPoints],
-		PlayerInfo[playerid][pPhone],
-		PlayerInfo[playerid][pHelper],
-		PlayerInfo[playerid][pMutedTime],
-		PlayerInfo[playerid][pSex],
-		PlayerInfo[playerid][pJailTime],
-		PlayerInfo[playerid][pCarModel],
-		PlayerInfo[playerid][pCarColor1],
-		PlayerInfo[playerid][pCarColor2],
-		PlayerInfo[playerid][pCarMileage],
-		PlayerInfo[playerid][pCarX],
-		PlayerInfo[playerid][pCarY],
-		PlayerInfo[playerid][pCarZ],
-		PlayerInfo[playerid][pCarRot],
-		PlayerInfo[playerid][pSpeedoX],
-		PlayerInfo[playerid][pSpeedoY],
-		PlayerInfo[playerid][pTutorial],
-		PlayerInfo[playerid][pTruckStop],
-		PlayerInfo[playerid][pHunger],
-		PlayerInfo[playerid][pFatigue],
-		PlayerInfo[playerid][pBan],
-		PlayerInfo[playerid][pModel],
-		PlayerInfo[playerid][pCarGas],
-		PlayerInfo[playerid][pCarDamagePanels],
-		PlayerInfo[playerid][pCarDamageDoors],
-		PlayerInfo[playerid][pCarDamageLights],
-		PlayerInfo[playerid][pCarDamageTires],
-		PlayerInfo[playerid][pCarOilFilter],
-		PlayerInfo[playerid][pCarAirFilter],
-		PlayerInfo[playerid][pCarBattary],
-		PlayerInfo[playerid][pCarOil],
-		PlayerInfo[playerid][pCarGaskets],
-		PlayerInfo[playerid][pCarSpark],
-		PlayerInfo[playerid][pCarHP],
+		//sscanf(Field,"p<|>dddddddddddfffffddddffddfddddffffffdddddddddd",
+		cache_get_value_name_int(0,"pAdmin",PlayerInfo[playerid][pAdmin]);
+		cache_get_value_name_int(0,"pMoney",PlayerInfo[playerid][pMoney]);
+		cache_get_value_name_int(0,"pPoints",PlayerInfo[playerid][pPoints]);
+		cache_get_value_name_int(0,"pPhone",PlayerInfo[playerid][pPhone]);
+		cache_get_value_name_int(0,"pHelper",PlayerInfo[playerid][pHelper]);
+		cache_get_value_name_int(0,"pMutedTime",PlayerInfo[playerid][pMutedTime]);
+		cache_get_value_name_int(0,"pSex",PlayerInfo[playerid][pSex]);
+		cache_get_value_name_int(0,"pJailTime",PlayerInfo[playerid][pJailTime]);
+		cache_get_value_name_int(0,"pCarModel",PlayerInfo[playerid][pCarModel]);
+		cache_get_value_name_int(0,"pCarColor1",PlayerInfo[playerid][pCarColor1]);
+		cache_get_value_name_int(0,"pCarColor2",PlayerInfo[playerid][pCarColor2]);
+		cache_get_value_name_float(0,"pCarMileage",PlayerInfo[playerid][pCarMileage]);
+		cache_get_value_name_float(0,"pCarX",PlayerInfo[playerid][pCarX]);
+		cache_get_value_name_float(0,"pCarY",PlayerInfo[playerid][pCarY]);
+		cache_get_value_name_float(0,"pCarZ",PlayerInfo[playerid][pCarZ]);
+		cache_get_value_name_float(0,"pCarRot",PlayerInfo[playerid][pCarRot]);
+		cache_get_value_name_int(0,"pSpeedoX",PlayerInfo[playerid][pSpeedoX]);
+		cache_get_value_name_int(0,"pSpeedoY",PlayerInfo[playerid][pSpeedoY]);
+		cache_get_value_name_int(0,"pTutorial",PlayerInfo[playerid][pTutorial]);
+		cache_get_value_name_int(0,"pTruckStop",PlayerInfo[playerid][pTruckStop]);
+		cache_get_value_name_float(0,"pHunger",PlayerInfo[playerid][pHunger]);
+		cache_get_value_name_float(0,"pFatigue",PlayerInfo[playerid][pFatigue]);
+		cache_get_value_name_int(0,"pBan",PlayerInfo[playerid][pBan]);
+		cache_get_value_name_int(0,"pModel",PlayerInfo[playerid][pModel]);
+		cache_get_value_name_float(0,"pCarGas",PlayerInfo[playerid][pCarGas]);
+		cache_get_value_name_int(0,"pCarDamagePanels",PlayerInfo[playerid][pCarDamagePanels]);
+		cache_get_value_name_int(0,"pCarDamageDoors",PlayerInfo[playerid][pCarDamageDoors]);
+		cache_get_value_name_int(0,"pCarDamageLights",PlayerInfo[playerid][pCarDamageLights]);
+		cache_get_value_name_int(0,"pCarDamageTires",PlayerInfo[playerid][pCarDamageTires]);
+		cache_get_value_name_float(0,"pCarOilFilter",PlayerInfo[playerid][pCarOilFilter]);
+		cache_get_value_name_float(0,"pCarAirFilter",PlayerInfo[playerid][pCarAirFilter]);
+		cache_get_value_name_float(0,"pCarBattary",PlayerInfo[playerid][pCarBattary]);
+		cache_get_value_name_float(0,"pCarOil",PlayerInfo[playerid][pCarOil]);
+		cache_get_value_name_float(0,"pCarGaskets",PlayerInfo[playerid][pCarGaskets]);
+		cache_get_value_name_float(0,"pCarSpark",PlayerInfo[playerid][pCarSpark]);
+		cache_get_value_name_float(0,"pCarHP",PlayerInfo[playerid][pCarHP]);
 		
-		PlayerInfo[playerid][pCarFullHealth],
-		PlayerInfo[playerid][pCarRadarDetector],
-		PlayerInfo[playerid][pCarFuelTank],
-		PlayerInfo[playerid][pCarRadio],
-		PlayerInfo[playerid][pCarAdditive],
+		cache_get_value_name_int(0,"pCarFullHealth",PlayerInfo[playerid][pCarFullHealth]);
+		cache_get_value_name_int(0,"pCarRadarDetector",PlayerInfo[playerid][pCarRadarDetector]);
+		cache_get_value_name_int(0,"pCarFuelTank",PlayerInfo[playerid][pCarFuelTank]);
+		cache_get_value_name_int(0,"pCarRadio",PlayerInfo[playerid][pCarRadio]);
+		cache_get_value_name_int(0,"pCarAdditive",PlayerInfo[playerid][pCarAdditive]);
 		
-		PlayerInfo[playerid][pCompany],
-		PlayerInfo[playerid][pCompanyTime],
-		PlayerInfo[playerid][pCarNeck],
-		PlayerInfo[playerid][pAccepted],
-		PlayerInfo[playerid][pCarDamper]);
+		cache_get_value_name_int(0,"pCompany",PlayerInfo[playerid][pCompany]);
+		cache_get_value_name_int(0,"pCompanyTime",PlayerInfo[playerid][pCompanyTime]);
+		cache_get_value_name_int(0,"pCarNeck",PlayerInfo[playerid][pCarNeck]);
+		cache_get_value_name_int(0,"pAccepted",PlayerInfo[playerid][pAccepted]);
+		cache_get_value_name_int(0,"pCarDamper",PlayerInfo[playerid][pCarDamper]);
 		if(PlayerInfo[playerid][pBan])
 			Kick(playerid);
 		ResetPlayerMoney(playerid);
@@ -436,13 +440,14 @@ stock LoadPlayer(playerid)
 		}
 		SetPlayerSkin(playerid,PlayerInfo[playerid][pModel]);
 		ShowPlayerDialog(playerid,0,DIALOG_STYLE_MSGBOX,"Вход","{FFFFFF}Нажмите кнопку {FFFF00}[spawn]{FFFFFF} внизу экрана","Ок","");
+		new query[255];
+		new playername[MAX_PLAYER_NAME];
+		GetPlayerName(playerid,playername,sizeof(playername));
 		format(query,sizeof(query),"UPDATE players SET online=1 WHERE Name='%s'",playername);
-		mysql_query(query);
+		mysql_query(MySQL, query, false);
 	}
 	else
  		printf("player %s not in base",oGetPlayerName(playerid));
-
-	mysql_free_result();
 	return 1;
 }
 stock SavePlayer(playerid)
@@ -480,7 +485,7 @@ stock SavePlayer(playerid)
 	PlayerInfo[playerid][pModel],
 	PlayerInfo[playerid][pCarGas],
 	playername);
-	mysql_query(query);
+	mysql_query(MySQL, query, false);
 	
 	GetVehicleDamageStatus(PlayerInfo[playerid][pCarID],
 	PlayerInfo[playerid][pCarDamagePanels],
@@ -512,7 +517,7 @@ stock SavePlayer(playerid)
 	PlayerInfo[playerid][pAccepted],
 	PlayerInfo[playerid][pCarDamper],
 	playername);
-	mysql_query(query);
+	mysql_query(MySQL, query, false);
 	return 1;
 }
 stock ClearPlayerPerems(playerid)
@@ -579,14 +584,15 @@ stock CheckPlayerPassword(playerid,pass[])
 	if(!ValidPassSymbols(pass))return 0;
     new query[255];
 	format(query,sizeof(query),"SELECT id FROM players WHERE Name='%s' AND Pass='%s'",oGetPlayerName(playerid),MD5_Hash(pass));
-	mysql_query(query);
-	mysql_store_result();
-	if(!mysql_num_rows())
-	{
-	    mysql_free_result();
+	new Cache:result=mysql_query(MySQL,query);
+    new rows;
+	cache_get_row_count(rows);
+    if(rows>0)
+    {
+	   	cache_delete(result);
 	    return 0;
 	}
-	mysql_free_result();
+	cache_delete(result);
 	return 1;
 }
 
@@ -608,16 +614,17 @@ stock IsValidPlayer(playerid)
 {
 	new query[128];
 	format(query,sizeof(query),"SELECT id FROM players WHERE Name='%s'",oGetPlayerName(playerid));
-	mysql_query(query);
-	mysql_store_result();
-	if(mysql_num_rows()!=0)
-	{
-	    mysql_free_result();
+	new Cache:result=mysql_query(MySQL,query);
+    new rows;
+	cache_get_row_count(rows);
+    if(rows>0)
+    {
+	   	cache_delete(result);
 	    return 1;
 	}
 	else
 	{
-	    mysql_free_result();
+		cache_delete(result);
 		return 0;
 	}
 }
@@ -636,7 +643,7 @@ stock RegisterPlayer(playerid,password[])
     }
     new query[255];
 	format(query,sizeof(query),"INSERT INTO players SET Name='%s', Pass='%s'",oGetPlayerName(playerid),MD5_Hash(password));
-	mysql_query(query);
+	mysql_query(MySQL, query, false);
 	format(query,sizeof(query),"Поздравляем с успешной регистрацией\nАккаунт - %s\nПароль - %s\n\nСохраните эти данные.",oGetPlayerName(playerid),password);
 	ShowPlayerDialog(playerid,0,DIALOG_STYLE_MSGBOX," ",query,"Ок","");
 	return 1;
@@ -781,7 +788,7 @@ public OnPlayerDisconnect(playerid,reason)
 		if(PlayerInfo[playerid][pLogin])
 		{
 		    format(str,sizeof(str),"UPDATE players SET online=0 WHERE Name='%s'",oGetPlayerName(playerid));
-			mysql_query(str);
+			mysql_query(MySQL, str, false);
 		    SavePlayer(playerid);
 		    PlayerInfo[playerid][pLogin]=0;
 		    if(PlayerInfo[playerid][pCarModel]!=0)
@@ -901,7 +908,7 @@ public OnGameModeInit()
 {
 	MySQLConnect(MYSQL_HOST,MYSQL_USER,MYSQL_PASS,MYSQL_BASE);
 	SendAddMessage(COLOR_GREEN,"  Welcome to Valakas Trucker Roleplay");
-	mysql_query("UPDATE players SET online=0");
+	mysql_query(MySQL, "UPDATE players SET online=0", false);
 	SetGameModeText(GAMEMODENAME);
 	CreateChangeText();
 	AnimInit();

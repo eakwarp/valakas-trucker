@@ -7,21 +7,28 @@ COMMAND:regsshow(playerid,params[])
 }
 stock AdminShowRegs(playerid)
 {
-	new str[2048],Field[255];
-	mysql_query("SELECT id, name FROM regs WHERE checked=0");
-	mysql_store_result();
-	new row=mysql_num_rows();
-	if(!row)
+	mysql_tquery(MySQL, "SELECT id, name FROM regs WHERE checked=0", "SQL_AdminShowRegs", "d", playerid);
+	return 1;
+}
+forward SQL_AdminShowRegs(playerid);
+public SQL_AdminShowRegs(playerid)
+{
+	new rows,str[2048];
+	cache_get_row_count(rows);
+	if(!rows)
 	    return ShowPlayerDialog(playerid,0,DIALOG_STYLE_LIST,"Не проверенные регистрации:","Пусто","Ок","");
-    for(new x=0; x < row; x++)
+    for(new x=0; x < rows; x++)
 	{
-	    mysql_fetch_row_format(Field);
+		new id,name[24];
+		cache_get_value_name_int(0,"id",id);
+		cache_get_value_name(0,"name",name,24);
+	    //mysql_fetch_row_format(Field);
+		new Field[128];
+		format(Field,128,"%d|%s\n",id,name);
 	    strcat(str,Field);
-		strcat(str,"\n");
 	}
-	mysql_free_result();
 	new str1[128];
-	format(str1,sizeof(str1),"Не проверенные регистрации(всего %d):",row);
+	format(str1,sizeof(str1),"Не проверенные регистрации(всего %d):",rows);
 	ShowPlayerDialog(playerid,DIALOG_ALLREGSHOW,DIALOG_STYLE_LIST,str1,str,"Выбор","Выход");
 	return 1;
 }
@@ -73,15 +80,48 @@ new RegID[MAX_PLAYERS];
 
 stock ShowReg(playerid,inputtext[])
 {
-    new Field1[4096],query[512],str1[255],str[4096];
+    new query[512];
 	sscanf(inputtext,"p<|>ds[24]",
 	RegID[playerid],
 	RegName[playerid]);
 	format(query,sizeof(query),"SELECT strtext0, strtext1, strtext2, strtext3, strtext4, strtext5, strtext6, strtext7, strtext8, strtext9, strtext10, strtext11, strtext12, strtext13, strtext14, strtext15, strtext16, strtext17, strtext18, strtext19, strtext20, strtext21, strtext22, strtext23, strtext24 FROM regs WHERE id='%d'",RegID[playerid]);
-	mysql_query(query);
-	mysql_store_result();
-	if(mysql_fetch_row_format(Field1))
+	mysql_tquery(MySQL, query, "SQL_ShowReg", "d", playerid);
+	return 1;
+}
+forward SQL_ShowReg(playerid);
+public SQL_ShowReg(playerid)
+{
+	new str1[255],str[4096];
+	new rows;
+	cache_get_row_count(rows);
+	if(rows>0)
 	{
+		cache_get_value_name(0,"strtext0",RegText[playerid][0],255);
+		cache_get_value_name(0,"strtext1",RegText[playerid][1],255);
+		cache_get_value_name(0,"strtext2",RegText[playerid][2],255);
+		cache_get_value_name(0,"strtext3",RegText[playerid][3],255);
+		cache_get_value_name(0,"strtext4",RegText[playerid][4],255);
+		cache_get_value_name(0,"strtext5",RegText[playerid][5],255);
+		cache_get_value_name(0,"strtext6",RegText[playerid][6],255);
+		cache_get_value_name(0,"strtext7",RegText[playerid][7],255);
+		cache_get_value_name(0,"strtext8",RegText[playerid][8],255);
+		cache_get_value_name(0,"strtext9",RegText[playerid][9],255);
+		cache_get_value_name(0,"strtext10",RegText[playerid][10],255);
+		cache_get_value_name(0,"strtext11",RegText[playerid][11],255);
+		cache_get_value_name(0,"strtext12",RegText[playerid][12],255);
+		cache_get_value_name(0,"strtext13",RegText[playerid][13],255);
+		cache_get_value_name(0,"strtext14",RegText[playerid][14],255);
+		cache_get_value_name(0,"strtext15",RegText[playerid][15],255);
+		cache_get_value_name(0,"strtext16",RegText[playerid][16],255);
+		cache_get_value_name(0,"strtext17",RegText[playerid][17],255);
+		cache_get_value_name(0,"strtext18",RegText[playerid][18],255);
+		cache_get_value_name(0,"strtext19",RegText[playerid][19],255);
+		cache_get_value_name(0,"strtext20",RegText[playerid][20],255);
+		cache_get_value_name(0,"strtext21",RegText[playerid][21],255);
+		cache_get_value_name(0,"strtext22",RegText[playerid][22],255);
+		cache_get_value_name(0,"strtext23",RegText[playerid][23],255);
+		cache_get_value_name(0,"strtext24",RegText[playerid][24],255);
+		/*
 		sscanf(Field1,"p<|>s[255]\
 		s[255]\
 		s[255]\
@@ -131,7 +171,7 @@ stock ShowReg(playerid,inputtext[])
 	    RegText[playerid][21],
 	    RegText[playerid][22],
 	    RegText[playerid][23],
-	    RegText[playerid][24]);
+	    RegText[playerid][24]);*/
 		format(str,sizeof(str),"%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s",
 		RegText[playerid][0],
 	    RegText[playerid][1],
@@ -161,7 +201,7 @@ stock ShowReg(playerid,inputtext[])
 	}
 	format(str1,sizeof(str1),"Заявка игрока %s",RegName[playerid]);
 	ShowPlayerDialog(playerid,DIALOG_REGSHOW,DIALOG_STYLE_MSGBOX,str1,str,"Меню","Выход");
-	mysql_free_result();
+	//mysql_free_result();
 	return 1;
 }
 stock ShowMenuReg(playerid)
@@ -176,37 +216,38 @@ stock ShowMenuRegUse(playerid,listitem)
 {
 	new query[255],str[255];
 	format(query,sizeof query,"SELECT id FROM regs WHERE name='%s' AND checked=0",RegName[playerid]);
-	mysql_query(query);
-	mysql_store_result();
-	if(!mysql_num_rows())
-	{
-	    mysql_free_result();
-	    format(str,sizeof str,"{FFFFFF}Данная заявка игрока %s уже была проверена ранее",RegName[playerid]);
+	new Cache:result=mysql_query(MySQL,query);
+    new rows;
+	cache_get_row_count(rows);
+    if(rows==0)
+    {
+	   	cache_delete(result);
+		format(str,sizeof str,"{FFFFFF}Данная заявка игрока %s уже была проверена ранее",RegName[playerid]);
 	    return ShowPlayerDialog(playerid,0,DIALOG_STYLE_MSGBOX,"Ошибка",str,"Ок","");
 	}
-	mysql_free_result();
+	cache_delete(result);
 	switch(listitem)
 	{
 	    case 0://подтвердить
 		{
 		    format(query,sizeof query,"UPDATE regs SET checked=1 WHERE name='%s'",RegName[playerid]);
-		    mysql_query(query);
+		    mysql_query(MySQL, query, false);
 		    format(str,sizeof str,"{FFFFFF}Вы {33AA33}подтвердили {FFFFFF}заявку игрока %s",RegName[playerid]);
 		    ShowPlayerDialog(playerid,0,DIALOG_STYLE_MSGBOX,"Подтверждение заявки",str,"Ок","");
 		}
 		case 1://отклонить
 		{
 		    format(query,sizeof query,"UPDATE regs SET checked=2 WHERE id='%d'",RegID[playerid]);
-		    mysql_query(query);
+		    mysql_query(MySQL, query, false);
 		    format(str,sizeof str,"{FFFFFF}Вы {AA3333}отклонили {FFFFFF}заявку игрока %s",RegName[playerid]);
 		    ShowPlayerDialog(playerid,0,DIALOG_STYLE_MSGBOX,"Отклонение заявки",str,"Ок","");
 		}
 		case 2://забанить
 		{
 		    format(query,sizeof query,"UPDATE regs SET checked=2 WHERE id='%d'",RegID[playerid]);
-		    mysql_query(query);
+		    mysql_query(MySQL, query, false);
 		    format(query,sizeof query,"UPDATE players SET pBan=1 WHERE name='%s'",RegName[playerid]);
-		    mysql_query(query);
+		    mysql_query(MySQL, query, false);
 		    format(str,sizeof str,"{FFFFFF}Вы {AA3333}отклонили {FFFFFF}заявку игрока %s, а так же перманентно забанили его.",RegName[playerid]);
 		    ShowPlayerDialog(playerid,0,DIALOG_STYLE_MSGBOX,"Отклонение заявки",str,"Ок","");
 		}
@@ -328,11 +369,11 @@ stock NextQuestion(playerid,response,inputtext[])
 			    format(str,4096,"INSERT INTO regs SET name='%s', checked=0",oGetPlayerName(playerid));
 			    for(new x=0; x < RegTextNumStr[playerid]; x++)
 				{
-				    mysql_real_escape_string(RegText[playerid][x],str3);
+				    mysql_escape_string(RegText[playerid][x],str3);
 					format(str2,512,", strtext%d='%s'",x,str3);
 					strcat(str,str2);
 				}
-				mysql_query(str);
+				mysql_query(MySQL, str, false);
     			new str1[4096];
 
 				for(new x=0; x < RegTextNumStr[playerid]; x++)
@@ -351,14 +392,26 @@ stock NextQuestion(playerid,response,inputtext[])
 
 stock CheckRegStatus(playerid)
 {
-	new status,query[255],Field3[255];
+	new status,query[255];//
 	format(query,sizeof(query),"SELECT checked FROM regs WHERE name='%s' ORDER BY id DESC LIMIT 1",oGetPlayerName(playerid));
+	new Cache:result=mysql_query(MySQL,query);
+    new rows;
+	cache_get_row_count(rows);
+    if(rows==0)
+    {
+	   	cache_delete(result);
+	    return PlayerStartRegister(playerid,0);
+	}
+	cache_get_value_name_int(0,"checked",status);
+	cache_delete(result);
+/*
+
 	mysql_query(query);
 	mysql_store_result();
 	if(!mysql_num_rows())
 	    return PlayerStartRegister(playerid,0);
-	mysql_fetch_row_format(Field3);
-	status=strval(Field3);
+	mysql_fetch_row_format(Field3);*/
+	//status=strval(Field3);
 	switch(status)
 	{
 	    case 0:
@@ -379,6 +432,5 @@ stock CheckRegStatus(playerid)
 	        PlayerStartRegister(playerid,1);
 		}
 	}
-	mysql_free_result();
 	return 1;
 }

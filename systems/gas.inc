@@ -11,16 +11,22 @@ new Text3D:GasLabel[MAX_GAS];
 new GasIcon[MAX_GAS];
 stock LoadGas(i)
 {
-	new query[255],Field[255];
+	new query[255];
 	format(query,sizeof(query),"SELECT gasX, gasY, gasZ FROM gas WHERE id=%d",i);
-	mysql_query(query);
-	mysql_store_result();
-	if(mysql_fetch_row_format(Field))
+	mysql_tquery(MySQL, query, "SQL_LoadGas", "d", i);
+	return 1;
+}
+forward SQL_LoadGas(i);
+public SQL_LoadGas(i)
+{
+	new rows;
+	cache_get_row_count(rows);
+	if(rows>0)
 	{
-		sscanf(Field,"p<|>fff",
-		GasInfo[i][gasX],
-		GasInfo[i][gasY],
-		GasInfo[i][gasZ]);
+		//sscanf(Field,"p<|>fff",
+		cache_get_value_name_float(0,"gasX",GasInfo[i][gasX]);
+		cache_get_value_name_float(0,"gasY",GasInfo[i][gasY]);
+		cache_get_value_name_float(0,"gasZ",GasInfo[i][gasZ]);
 	    GasInfo[i][gasValid]=1;
 	    GasLabel[i]=CreateDynamic3DTextLabel("Заправка\nНажмите гудок [H]", COLOR_GREEN,GasInfo[i][gasX], GasInfo[i][gasY], GasInfo[i][gasZ], 15.0);
 		GasPickup[i]=CreateDynamicPickup(1676,2,GasInfo[i][gasX], GasInfo[i][gasY], GasInfo[i][gasZ]);
@@ -28,7 +34,6 @@ stock LoadGas(i)
 	}
 	else
 	    GasInfo[i][gasValid]=0;
-	mysql_free_result();
 	return 1;
 }
 stock GasInit()
@@ -47,7 +52,7 @@ stock SaveGas(i)
 		GasInfo[i][gasY],
 		GasInfo[i][gasZ],
 		i);
-		mysql_query(query);
+		mysql_query(MySQL, query, false);
 		DestroyDynamic3DTextLabel(GasLabel[i]);
 		GasLabel[i]=CreateDynamic3DTextLabel("Заправка\nНажмите гудок [H]", COLOR_GREEN,GasInfo[i][gasX], GasInfo[i][gasY], GasInfo[i][gasZ], 15.0);
 		DestroyDynamicPickup(GasPickup[i]);
@@ -111,7 +116,7 @@ COMMAND:gascreate(playerid,params[])
 			GasInfo[i][gasY],
 			GasInfo[i][gasZ],
 			i);
-			mysql_query(query);
+			mysql_query(MySQL, query, false);
 			LoadGas(i);
 			new str[128];
 			format(str,sizeof(str),"Вы создали заправку %d",i);
@@ -147,7 +152,7 @@ COMMAND:gasdelete(playerid,params[])
 	DestroyDynamicPickup(GasPickup[i]);
 	DestroyDynamicMapIcon(GasIcon[i]);
     format(str,sizeof(str),"DELETE FROM gas WHERE id=%d",i);
-    mysql_query(str);
+    mysql_query(MySQL, str, false);
 	format(str,sizeof(str),"Вы удалили заправку %d",i);
 	SendClientMessage(playerid, COLOR_GRAD2, str);
 	return 1;

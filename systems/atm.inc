@@ -13,24 +13,29 @@ new AtmInfo[MAX_ATM][atminfo];
 
 stock LoadAtm(i)
 {
-    new query[255],Field[255];
+    new query[255];
 	format(query,sizeof(query),"SELECT atmX, atmY, atmZ, atmRot FROM atm WHERE id=%d",i);
-	mysql_query(query);
-	mysql_store_result();
-	if(mysql_fetch_row_format(Field))
+	mysql_tquery(MySQL, query, "SQL_LoadAtm", "d", i);
+	return 1;
+}
+forward SQL_LoadAtm(i);
+public SQL_LoadAtm(i)
+{
+	new rows;
+	cache_get_row_count(rows);
+	if(rows>0)
 	{
-		sscanf(Field,"p<|>ffff",
-		AtmInfo[i][atmX],
-		AtmInfo[i][atmY],
-		AtmInfo[i][atmZ],
-		AtmInfo[i][atmRot]);
+		//sscanf(Field,"p<|>ffff",
+		cache_get_value_name_float(0,"atmX",AtmInfo[i][atmX]);
+		cache_get_value_name_float(0,"atmY",AtmInfo[i][atmY]);
+		cache_get_value_name_float(0,"atmZ",AtmInfo[i][atmZ]);
+		cache_get_value_name_float(0,"atmRot",AtmInfo[i][atmRot]);
 		AtmInfo[i][atmValid]=1;
 		AtmInfo[i][atmObject] = CreateDynamicObject(2942,AtmInfo[i][atmX],AtmInfo[i][atmY],AtmInfo[i][atmZ],0.0,0.0,AtmInfo[i][atmRot]);
 		AtmInfo[i][atmIcon] = CreateDynamicMapIcon(AtmInfo[i][atmX],AtmInfo[i][atmY],AtmInfo[i][atmZ], 52, -1,-1,-1, -1, 250.0);
 	}
 	else
 	    AtmInfo[i][atmValid]=0;
-	mysql_free_result();
 	return 1;
 }
 stock AtmInit()
@@ -50,7 +55,7 @@ stock SaveAtm(i)
 		AtmInfo[i][atmZ],
 		AtmInfo[i][atmRot],
 		i);
-		mysql_query(query);
+		mysql_query(MySQL, query, false);
 		DestroyDynamicObject(AtmInfo[i][atmObject]);
 		DestroyDynamicMapIcon(AtmInfo[i][atmIcon]);
 		AtmInfo[i][atmObject] = CreateDynamicObject(2942,AtmInfo[i][atmX],AtmInfo[i][atmY],AtmInfo[i][atmZ],0.0,0.0,AtmInfo[i][atmRot]);
@@ -75,7 +80,7 @@ stock CreateAtm(playerid)
 			pos[2]-0.5,
 			pos[3],
 			i);
-			mysql_query(query);
+			mysql_query(MySQL, query, false);
 			LoadAtm(i);
 			return i;
 		}
@@ -141,7 +146,7 @@ COMMAND:atmdelete(playerid,params[])
     DestroyDynamicObject(AtmInfo[i][atmObject]);
 	DestroyDynamicMapIcon(AtmInfo[i][atmIcon]);
     format(str,sizeof(str),"DELETE FROM atm WHERE id=%d",i);
-    mysql_query(str);
+    mysql_query(MySQL, str, false);
 	format(str,sizeof(str),"Вы удалили банкомат %d",i);
 	SendClientMessage(playerid, COLOR_GRAD2, str);
 	return 1;

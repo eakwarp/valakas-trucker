@@ -13,25 +13,30 @@ enum deliveryinfo
 new DeliveryInfo[MAX_DELIVERYS][deliveryinfo];
 stock LoadDelivery(i)
 {
-    new query[255],Field[255];
+    new query[255];
 	format(query,sizeof(query),"SELECT deliveryProd, deliveryStartProp, deliveryEndProp, deliveryFragility, deliveryPrice, deliveryTrailer, deliveryValue FROM deliverys WHERE id=%d",i);
-	mysql_query(query);
-	mysql_store_result();
-	if(mysql_fetch_row_format(Field))
+	mysql_tquery(MySQL, query, "SQL_LoadDelivery", "d", i);
+	return 1;
+}
+forward SQL_LoadDelivery(i);
+public SQL_LoadDelivery(i)
+{
+	new rows;
+	cache_get_row_count(rows);
+	if(rows>0)
 	{
-		sscanf(Field,"p<|>s[32]dddddf",
-		DeliveryInfo[i][deliveryProd],
-	    DeliveryInfo[i][deliveryStartProp],
-	    DeliveryInfo[i][deliveryEndProp],
-	    DeliveryInfo[i][deliveryFragility],
-	    DeliveryInfo[i][deliveryPrice],
-		DeliveryInfo[i][deliveryTrailer],
-		DeliveryInfo[i][deliveryValue]);
+		//sscanf(Field,"p<|>s[32]dddddf",
+		cache_get_value_name(0,"deliveryProd",DeliveryInfo[i][deliveryProd],64);
+	    cache_get_value_name_int(0,"deliveryStartProp",DeliveryInfo[i][deliveryStartProp]);
+	   	cache_get_value_name_int(0,"deliveryEndProp", DeliveryInfo[i][deliveryEndProp]);
+	    cache_get_value_name_int(0,"deliveryFragility",DeliveryInfo[i][deliveryFragility]);
+	    cache_get_value_name_int(0,"deliveryPrice",DeliveryInfo[i][deliveryPrice]);
+		cache_get_value_name_int(0,"deliveryTrailer",DeliveryInfo[i][deliveryTrailer]);
+		cache_get_value_name_float(0,"deliveryValue",DeliveryInfo[i][deliveryValue]);
 	    DeliveryInfo[i][deliveryValid]=1;
 	}
 	else
 	    DeliveryInfo[i][deliveryValid]=0;
-	mysql_free_result();
 	return 1;
 }
 stock DeliveryInit()
@@ -54,7 +59,7 @@ stock SaveDelivery(i)
 	    DeliveryInfo[i][deliveryTrailer],
 	    DeliveryInfo[i][deliveryValue],
 		i);
-		mysql_query(query);
+		mysql_query(MySQL, query, false);
 	}
 	return 1;
 }
@@ -69,7 +74,7 @@ stock CreateDelivery(name[],start,end,fragility,price,trailer,Float:value)
 	        format(query,sizeof(query),"INSERT INTO deliverys SET deliveryProd=' %s', deliveryStartProp=%d, deliveryEndProp=%d, deliveryFragility=%d, deliveryPrice=%d, deliveryTrailer=%d, deliveryValue='%f', id=%d",
 			name,start,end,fragility,price,trailer,value,
 			i);
-			mysql_query(query);
+			mysql_query(MySQL, query, false);
 	        LoadDelivery(i);
 	        return i;
         }
@@ -133,7 +138,7 @@ COMMAND:deliverydelete(playerid,params[])
         return SendClientMessage(playerid, COLOR_GRAD2, "Нечего удалять.");
 	new query[255];
 	format(query,sizeof(query),"DELETE FROM deliveys WHERE id=%d",i);
-	mysql_query(query);
+	mysql_query(MySQL, query, false);
 	LoadDelivery(i);
     format(query,sizeof(query),"Вы удалили доставку %d",i);
     SendClientMessage(playerid, COLOR_GRAD2, query);
@@ -149,7 +154,7 @@ COMMAND:propdelete(playerid,params[])
         return SendClientMessage(playerid, COLOR_GRAD2, "Нечего удалять.");
 	new query[255];
 	format(query,sizeof(query),"DELETE FROM props WHERE id=%d",i);
-	mysql_query(query);
+	mysql_query(MySQL, query, false);
 	LoadProp(i);
     format(query,sizeof(query),"Вы удалили бизнес %d",i);
     SendClientMessage(playerid, COLOR_GRAD2, query);
