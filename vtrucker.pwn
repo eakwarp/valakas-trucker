@@ -1889,7 +1889,6 @@ COMMAND:gps(playerid,params[])
 	return 1;
 }
 
-
 stock PlayerDeathTrailer(playerid)
 {
 	new carid=GetPlayerVehicleID(playerid);
@@ -1915,6 +1914,7 @@ COMMAND:engine(playerid,params[])
 	}
 	return 1;
 }
+
 COMMAND:lights(playerid,params[])
 {
     if(GetPlayerState(playerid)!=PLAYER_STATE_DRIVER)
@@ -1928,6 +1928,7 @@ COMMAND:lights(playerid,params[])
 		SetVehicleParamsEx(carid,engine,VEHICLE_PARAMS_ON,alarm,doors,bonnet,boot,objective);
 	return 1;
 }
+
 COMMAND:open(playerid,params[])
 {
     if(!IsPlayerInAnyVehicle(playerid))
@@ -1973,10 +1974,6 @@ COMMAND:open(playerid,params[])
 	}
 	return 1;
 }
-
-
-
-
 
 stock SetPlayerStartEngine(playerid,carid)
 {
