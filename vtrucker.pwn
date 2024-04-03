@@ -115,10 +115,12 @@ new CarInfo[][carinfo]=
 };
 
 
-#define MYSQL_HOST "127.0.0.1"
-#define MYSQL_USER "root"
-#define MYSQL_PASS "****"
-#define MYSQL_BASE "samp"
+//#define MYSQL_HOST "127.0.0.1"
+//#define MYSQL_USER "samp"
+//#define MYSQL_PASS ""
+//#define MYSQL_BASE "trucker"//moved to mysql.ini in scriptfiles
+new mysql[4][64];
+
 #define MYSQL_DEBUG 1 //1
 new MySQL:MySQL;
 
@@ -284,6 +286,21 @@ stock MySQLConnect(sqlhost[], sqluser[], sqlpass[], sqldb[])
 	}
 	return 1;
 }
+
+stock LoadMySQL()
+{
+	new File:config = fopen("mysql.ini", io_read);
+	if (config)
+	{
+	    new Data[512];
+		fread(config, Data, sizeof(Data));
+		sscanf(Data,"p<,>s[64]s[64]s[64]s[64]",mysql[0],mysql[1],mysql[2],mysql[3]);
+		fclose(config);
+		printf("%s %s %s %s",mysql[0],mysql[1],mysql[2],mysql[3]);
+	}
+	return 1;
+}
+
 
 enum hotelinfo
 {
@@ -906,7 +923,15 @@ public OnGameModeInitTimer()
 new tmphour;
 public OnGameModeInit()
 {
-	MySQLConnect(MYSQL_HOST,MYSQL_USER,MYSQL_PASS,MYSQL_BASE);
+	print("Valakas Trucker Started");
+	LoadMySQL();
+	printf("MySQLConnect %s %s %s %s",mysql[0],mysql[1],mysql[2],mysql[3]);
+	if(!MySQLConnect(mysql[0],mysql[1],mysql[2],mysql[3]))
+	{
+		print("MySQL Connect Error");
+		return 0;
+	}
+	//MySQLConnect(MYSQL_HOST,MYSQL_USER,MYSQL_PASS,MYSQL_BASE);
 	SendAddMessage(COLOR_GREEN,"  Welcome to Valakas Trucker Roleplay");
 	mysql_query(MySQL, "UPDATE players SET online=0", false);
 	SetGameModeText(GAMEMODENAME);
