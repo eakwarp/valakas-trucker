@@ -45,6 +45,7 @@ COMMAND:help(playerid,params[])
 	{
 		strcat(str,"\n{FFFF00}Админское: {FFFFFF}/a /hs /an(swer) /noooc /makeadmin /makehelper /mute /jail /kick /ban /fixveh \n");
         strcat(str,"{FFFF00}Админское: {FFFFFF}/check /dn /up /bk /lt /rt /ft /fly /uppfly /endround /setstat /respawncar /regsshow\n");
+		strcat(str,"{FFFF00}Админское: {FFFFFF}/veh /destroycars\n");
 		strcat(str,"{FFFF00}Телепорты: {FFFFFF}/gotocar /getcar /entercar /mark /gotomark /goto /gethere /backhere /tpto\n");
 		strcat(str,"{FFFF00}Трак стопы: {FFFFFF}/truckstopcreate /truckstopcam /truckstoplabel /truckstoppos /truckstopname\n");
 		strcat(str,"{FFFF00}Прицепы: {FFFFFF}/trailercreate /trailersetpos\n");

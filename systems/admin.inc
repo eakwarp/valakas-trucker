@@ -1019,3 +1019,92 @@ COMMAND:achat(playerid,params[])
 	}
 	return 1;
 }
+
+new CreatedCars[100];
+new CreatedCar = 0;
+
+COMMAND:veh(playerid,params[])
+{
+    if (PlayerInfo[playerid][pAdmin] < 1)
+	    return SendClientMessage(playerid, COLOR_GRAD1, "   У Вас недостаточно прав для того, чтобы использовать эту команду!");
+	new car,color1,color2;
+	if (sscanf(params, "iii", car,color1,color2))
+	{
+		SendClientMessage(playerid, COLOR_GRAD2, "{ffcc99}Используйте: {d5d5d5}/veh [id машины] [цвет1] [цвет2]");
+		return ShowCarsList(playerid,0);
+	}
+	if(car < 400 || car > 611)
+		return SendClientMessage(playerid, COLOR_GREY, "   Номер транспортного средства не должен быть ниже 400 и выше 611!");
+	if(color1 < -1 || color1 > 126)
+		return SendClientMessage(playerid, COLOR_GREY, "   Номер цвета должен быть не ниже 0 и не выше 126!");
+	if(color2 < -1 || color2 > 126)
+		return SendClientMessage(playerid, COLOR_GREY, "   Номер цвета должен быть не ниже 0 и не выше 126!");
+	new Float:X,Float:Y,Float:Z;
+	GetPlayerPos(playerid, X,Y,Z);
+	new carid = CreateVehicle(car, X,Y,Z, 0.0, color1, color2, 60000);
+	CreatedCars[CreatedCar] = carid;
+	CreatedCar ++;
+	new string[128];
+	format(string, sizeof(string), "   Транспортное средство %d(%s[%d]) создано.", carid,CarNames[car-400],car);
+	SendClientMessage(playerid, COLOR_GREY, string);
+	return 1;
+}
+COMMAND:destroycars(playerid,params[])
+{
+    if(PlayerInfo[playerid][pAdmin] < 1)
+	    return SendClientMessage(playerid, COLOR_GRAD1, "   У Вас недостаточно прав для того, чтобы использовать эту команду!");
+//=================================================
+	new Jpbit=0;
+	new Jpbit2=0;
+	for(new i = 0; i < sizeof(CreatedCars); i++)
+	{
+		if(CreatedCars[i] != 0)
+		{
+			//=========================
+		  	Jpbit=0;
+			foreach (Player, vi)
+			{
+				if(IsPlayerInVehicle(vi, CreatedCars[i]))
+				{
+					RemovePlayerFromVehicle(vi);
+					Jpbit=1;
+				}
+			}
+			if(Jpbit == 0)DestroyVehicle(CreatedCars[i]);
+			else Jpbit2=1;  //=1 если когото выкинули
+			//=========================
+		}
+	}
+	if (Jpbit2 == 0)
+		SendClientMessage(playerid, COLOR_GREY, "   Все созданные транспортные средства уничтожены!");
+	else
+		SendClientMessage(playerid, COLOR_GREY, "   Злоумышленники наказаны!");
+	return 1;
+}
+
+stock ShowCarsList(playerid,id)
+{
+	new str[4096];
+	for(new i=id;i<sizeof(CarNames);i++)
+ 	{
+		format(str, 4096, "%s%i\t%d|%s\n", str, i+400,i+400,CarNames[i]);
+	}
+	ShowPlayerDialog(playerid,DIALOG_ADMINVEH,DIALOG_STYLE_LIST,"Select vehicle:",str,"Select", "Cancel");//DIALOG_STYLE_PREVIEW_MODEL
+	return 1;
+}
+stock VehDialogResponse(playerid,response,listitem,inputtext[])
+{
+	new car=listitem+400;
+	new string[255];
+	format(string,sizeof(string),"resp %d, list %d, input %s",response, listitem, inputtext);
+	SendClientMessage(playerid,COLOR_GREY,string);
+	if(!response) return 1;
+	new Float:X,Float:Y,Float:Z;
+	GetPlayerPos(playerid, X,Y,Z);
+	new carid = CreateVehicle(car, X,Y,Z, 0.0, -1, -1, 60000);
+	CreatedCars[CreatedCar] = carid;
+	CreatedCar ++;
+	format(string, sizeof(string), "Транспортное средство %d(%s[%d]) создано.", carid,CarNames[car-400],car);
+	SendClientMessage(playerid, COLOR_GREY, string);
+	return 1;
+}
