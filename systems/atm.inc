@@ -92,7 +92,7 @@ COMMAND:atmcreate(playerid,params[])
     if(PlayerInfo[playerid][pAdmin]<1)return 1;
 	new i= CreateAtm(playerid);
 	new str[255];
-	format(str,sizeof(str),"Вы создали банкомат %d",i);
+	format(str,sizeof(str),atmtext1,i);
 	SendClientMessage(playerid, COLOR_GRAD2, str);
 	return 1;
 }
@@ -120,7 +120,7 @@ stock ShowAtm(playerid,startid,endid)
     }
     format(str,sizeof(str),"%s%d|next",str,bit);
 	new strm[255];
-	format(strm,sizeof(strm),"Список забегаловок [%d - %d]",startid,endid);
+	format(strm,sizeof(strm),atmtext2,startid,endid);
     ShowPlayerDialog(playerid,DIALOG_ATMLIST,DIALOG_STYLE_LIST,strm,str,"Выбор","Выход");
 	return 1;
 }
@@ -131,7 +131,7 @@ stock GotoAtm(playerid,i)
 	AtmInfo[i][atmY],
 	AtmInfo[i][atmZ]);
 	new str[255];
-	format(str,sizeof(str),"Вы телепортированны к банкомату %d",i);
+	format(str,sizeof(str),atmtext3,i);
 	SendClientMessage(playerid, COLOR_GRAD2, str);
 	return 1;
 }
@@ -141,13 +141,13 @@ COMMAND:atmdelete(playerid,params[])
     if(PlayerInfo[playerid][pAdmin]<1)return 1;
     new i,str[255];
     if (sscanf(params, "i",i))
-    	return SendClientMessage(playerid, COLOR_GRAD2, " ИСПОЛЬЗУЙТЕ: /atmdelete [id банкомата]");
+    	return SendClientMessage(playerid, COLOR_GRAD2, atmtext4);
    	AtmInfo[i][atmValid]=0;
     DestroyDynamicObject(AtmInfo[i][atmObject]);
 	DestroyDynamicMapIcon(AtmInfo[i][atmIcon]);
     format(str,sizeof(str),"DELETE FROM atm WHERE id=%d",i);
     mysql_query(MySQL, str, false);
-	format(str,sizeof(str),"Вы удалили банкомат %d",i);
+	format(str,sizeof(str),atmtext5,i);
 	SendClientMessage(playerid, COLOR_GRAD2, str);
 	return 1;
 }
