@@ -1,5 +1,7 @@
-#define GAMEMODENAME "Valakas Trucker 182(27.03.2024)"
+#define GAMEMODENAME "Valakas Trucker 183(08.04.2024)"
 #include "translations/RU"
+#define DISABLE_MODERATE_REGISTRATION //if defined - new players automatically accepted.
+#define INGAMEREGISTER //
 /*
 	Original developing by Eakwarp
 	todo:
@@ -124,7 +126,7 @@ new mysql[4][64];
 #define MYSQL_DEBUG 1 //1
 new MySQL:MySQL;
 
-#define INGAMEREGISTER
+
 
 #pragma dynamic 16384
 
@@ -861,8 +863,13 @@ public OnPlayerSpawn(playerid)
 	SetPlayerTime(playerid,h,m);
     SetPlayerSkin(playerid,PlayerInfo[playerid][pModel]);
     //TogglePlayerClock(playerid,1);
+
     if(!PlayerInfo[playerid][pAccepted])
+#if defined DISABLE_MODERATE_REGISTRATION
         return CheckRegStatus(playerid);
+#else
+		PlayerInfo[playerid][pAccepted]=1;
+#endif
     if(!PlayerInfo[playerid][pTutorial])
 		return PlayerTutorial(playerid,0);
 	else
