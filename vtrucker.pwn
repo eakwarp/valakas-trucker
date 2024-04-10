@@ -906,7 +906,8 @@ public OnPlayerSpawn(playerid)
 	else
 	{
 	    StartShowLbt(playerid,1,0);
-	    ShowPlayerDialog(playerid,-1,DIALOG_STYLE_MSGBOX," "," "," ","");
+		HidePlayerDialog(playerid);
+	    //ShowPlayerDialog(playerid,-1,DIALOG_STYLE_MSGBOX," "," "," ","");
 	}
     if(PlayerInfo[playerid][pJailTime]>0)
 	{
