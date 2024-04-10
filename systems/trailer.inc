@@ -43,6 +43,9 @@ public SQL_LoadTrailer(i)
 		TrailerInfo[i][tiColor1],
 		TrailerInfo[i][tiColor2],
 		120000);
+		new strb[32];
+	    format(strb,sizeof(strb),"SA %03d TR",TrailerInfo[i][tiCarID]);
+		SetVehicleNumberPlate(TrailerInfo[i][tiCarID],strb);
 		TrailerInfo[i][tiValid]=1;
 	}
 	else

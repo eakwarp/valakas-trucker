@@ -251,6 +251,7 @@ new PlayerRadarDetectID[MAX_PLAYERS];
 new PlayerConvoyCreater[MAX_PLAYERS];
 new PlayerConvoyID[MAX_PLAYERS] = { INVALID_PLAYER_ID, ... };
 new InviteOffer[MAX_PLAYERS]={ INVALID_PLAYER_ID, ... };
+new UsedFillCan[MAX_PLAYERS];
 
 new PlayerTrailer[MAX_PLAYERS];
 new PlayerDeliveryState[MAX_PLAYERS];
@@ -755,6 +756,7 @@ public OnPlayerConnect(playerid)
 		gEngineStart[playerid]=0;
 		PlayerConvoyCreater[playerid]=0;
 		PlayerConvoyID[playerid] =INVALID_PLAYER_ID;
+		UsedFillCan[playerid] = 0;
 		InviteOffer[playerid]=INVALID_PLAYER_ID;
 		gPlayerUsingLoopingAnim[playerid] = 0;
 		gPlayerAnimLibsPreloaded[playerid] = 0;
@@ -896,10 +898,12 @@ public OnPlayerSpawn(playerid)
     //TogglePlayerClock(playerid,1);
 
     if(!PlayerInfo[playerid][pAccepted])
-#if defined DISABLE_MODERATE_REGISTRATION
+#if !defined DISABLE_MODERATE_REGISTRATION
         return CheckRegStatus(playerid);
 #else
+	{
 		PlayerInfo[playerid][pAccepted]=1;
+	}
 #endif
     if(!PlayerInfo[playerid][pTutorial])
 		return PlayerTutorial(playerid,0);
@@ -1430,16 +1434,16 @@ public OneSecTimer()
 			        if(PlayerInfo[i][pCarAdditive])
 			        {
 			        	if(PlayerInfo[i][pSpeed]>10.0)
-			        		Gas[carid]-=0.035;
+			        		Gas[carid]-=0.0035;
 						else
-						    Gas[carid]-=0.0175;
+						    Gas[carid]-=0.00175;
 				    }
 			        else
 			        {
 						if(PlayerInfo[i][pSpeed]>10.0)
-							Gas[carid]-=0.05;
+							Gas[carid]-=0.005;
 				        else
-				            Gas[carid]-=0.025;
+				            Gas[carid]-=0.0025;
 				    }
 				}
 				if(Gas[carid]<0.0)
@@ -1517,10 +1521,10 @@ public OneSecTimer()
 			Signal[i]=GetSignal(i);
 		if(Signal[i]<1)CallDeath(i);
 		if(PlayerInfo[i][pHunger]<100.0)
-		    PlayerInfo[i][pHunger]+=0.03;
+		    PlayerInfo[i][pHunger]+=0.003;
 
 		if(PlayerInfo[i][pFatigue]<100.0)
-		    PlayerInfo[i][pFatigue]+=0.015;
+		    PlayerInfo[i][pFatigue]+=0.0015;
 	}
 	minbit++;
 	if(minbit==60)
@@ -1680,6 +1684,9 @@ stock CreatePlayerCar(playerid)
 		new engine,lights,alarm,doors,bonnet,boot,objective;
 		GetVehicleParamsEx(PlayerInfo[playerid][pCarID],engine,lights,alarm,doors,bonnet,boot,objective);
 		SetVehicleParamsEx(PlayerInfo[playerid][pCarID],VEHICLE_PARAMS_OFF,VEHICLE_PARAMS_OFF,alarm,doors,bonnet,boot,objective);
+		new strb[32];
+		format(strb,sizeof(strb),"SA %03d",PlayerInfo[playerid][pCarID]);
+		SetVehicleNumberPlate(PlayerInfo[playerid][pCarID],strb);
 	}
 	return 1;
 }
