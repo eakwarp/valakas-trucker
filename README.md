@@ -7,3 +7,5 @@ streamer by incognito
 sscanf2 by Y_less
 
 MySQL by BlueG
+
+Test server started on valakas.ru:7778
