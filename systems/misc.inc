@@ -543,7 +543,7 @@ stock GetClosestCarInRadiusNearPlayer(playerid, Float:radius,bit=0)
 	return id;
 }
 
-stock IsValidNickname(playerid)
+stock IsValidRPNickname(playerid)
 {
 	new name[MAX_PLAYER_NAME];
 	GetPlayerName(playerid,name, sizeof name);

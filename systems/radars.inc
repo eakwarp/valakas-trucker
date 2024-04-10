@@ -192,6 +192,7 @@ stock OnPlayerRadar(playerid)
 		{
 		    if(IsPlayerInRangeOfPoint(playerid,RadarInfo[i][radarZoneRad],RadarInfo[i][radarZoneX],RadarInfo[i][radarZoneY],RadarInfo[i][radarZoneZ]))
 		    {
+				PlayerRadarDetectID[playerid]=i;
 		        PlayerRadarDetect[playerid]=3;
 		        razn=PlayerInfo[playerid][pSpeed]-RadarInfo[i][radarMaxSpeed];
 				if(razn > 60.0)GivePlayerSpeedTicket(playerid,RadarInfo[i][radarMaxSpeed],razn,3000);
@@ -206,12 +207,14 @@ stock OnPlayerRadar(playerid)
 		    {
 				if(IsPlayerInRangeOfPoint(playerid,RadarInfo[i][radarZoneRad]*5,RadarInfo[i][radarZoneX],RadarInfo[i][radarZoneY],RadarInfo[i][radarZoneZ]))
 				{
+					PlayerRadarDetectID[playerid]=i;
 				    PlayerRadarDetect[playerid]=2;
 				    PlayerPlaySound(playerid, 5201, 0.0, 0.0, 0.0);
 				    return 1;
 				}
 				else if(IsPlayerInRangeOfPoint(playerid,RadarInfo[i][radarZoneRad]*10,RadarInfo[i][radarZoneX],RadarInfo[i][radarZoneY],RadarInfo[i][radarZoneZ]))
 				{
+					PlayerRadarDetectID[playerid]=i;
 				   	PlayerRadarDetect[playerid]=1;
 				   	PlayerPlaySound(playerid, 5201, 0.0, 0.0, 0.0);
 				   	return 1;

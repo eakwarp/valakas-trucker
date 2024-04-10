@@ -2,6 +2,7 @@
 #include "translations/RU"
 #define DISABLE_MODERATE_REGISTRATION //if defined - new players automatically accepted.
 #define INGAMEREGISTER //
+#define DISABLE_RP_NAMES
 /*
 	Original developing by Eakwarp
 	todo:
@@ -1030,12 +1031,14 @@ stock StartPlayerLogin(playerid)
 
 stock StartPlayerRegister(playerid,reason)
 {
-	if(!IsValidNickname(playerid))
+	#if !defined DISABLE_RP_NAMES
+	if(!IsValidRPNickname(playerid))
 	{
 	    ShowPlayerDialog(playerid,0,DIALOG_STYLE_MSGBOX," ","Ник вашего персонажа не соответствует правилам сервера,\nдальнейшая регистрация не возможна, вы кикнуты","Ок","");
 		SetTimerEx("kick", 1000, 0, "d", playerid);
 		return 1;
 	}
+	#endif
     new str[255];
     switch(reason)
     {
@@ -1654,6 +1657,16 @@ COMMAND:speedlimit(playerid,params[])
 	}
 	else
 	    SendClientMessage(playerid,COLOR_WHITE, " ИСПОЛЬЗОВАНИЕ: /speedlimit [максимальная скорость] (0 для снятия лимита)" );
+	return 1;
+}
+stock SetSpeedLimit(playerid,Float:limit)
+{
+
+	SpeedLimit[playerid]=floatround(limit);
+	new string[32];
+	format(string,sizeof(string),"0.%d",SpeedLimit[playerid]);
+	g_fSpeedCap[playerid] = floatstr(string);
+	g_fSpeedCap[playerid]/=1.4;
 	return 1;
 }
 

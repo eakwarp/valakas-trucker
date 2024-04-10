@@ -124,10 +124,11 @@ public PlayerSpeedoUpdate(i)
 				    {
 						if(RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]!=radarspeedbit[i])
 						{
-							new st[24];
-							format(st,sizeof(st),"%f",RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
-						    radarspeedbit[i]=strval(st);
-						    cmd_speedlimit(i,radarspeedbit[i]);
+							//new st[24];
+							//format(st,sizeof(st),"%0.1f",RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
+						    radarspeedbit[i]=floatround(RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
+							SetSpeedLimit(i,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
+						    //cmd_speedlimit(i,st);
 						}
 				    }
 					else
@@ -147,11 +148,11 @@ public PlayerSpeedoUpdate(i)
 						switch(PlayerRadarDetect[i])
 						{
 						    case 1:
-					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%d):", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
+					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%0.1f):", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
 					    	case 2:
-					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%d)::", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
+					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%0.1f)::", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
 					    	case 3:
-					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%d):::", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
+					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%0.1f):::", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
       						default:
 					    	    format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~b~clear", sdstring);
 					    }
@@ -163,11 +164,11 @@ public PlayerSpeedoUpdate(i)
 						switch(PlayerRadarDetect[i])
 						{
 						    case 1:
-					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%d)~y~:", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
+					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%0.1f)~y~:", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
 					    	case 2:
-					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%d)~y~::", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
+					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%0.1f)~y~::", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
 					    	case 3:
-					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%d)~y~:::", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
+					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%0.1f)~y~:::", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
 					    	default:
 					    	    format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~b~clear", sdstring);
 					    }
