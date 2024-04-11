@@ -31,7 +31,7 @@ COMMAND:help(playerid,params[])
 	new str[4096];
 	strcat(str,"{FFFF00}Основное: {FFFFFF}/help /stats /pay /report /question /request /truckstop /hotel /food /repair /buy /buycar /gps /convoy /rc\n");
     strcat(str,"{FFFF00}Основное: {FFFFFF}/speedo /speedlimit /park /delivery /engine /open /lights /note /givemyfuel /closestdelivery /animlist\n");
-	strcat(str,"{FFFF00}Основное: {FFFFFF}/usereservefuel\n");
+	strcat(str,"{FFFF00}Основное: {FFFFFF}/usereservefuel /turntype /turn\n");
 	strcat(str,"{FFFF00}Чаты: {FFFFFF}/me /do /todo /try /b /l(ocal) /c(lose) /s(hout) /r /o(oc)\n");
 	strcat(str,"{FFFF00}Телефон: {FFFFFF}/call /p /h /sms /togphone\n");
 	if(PlayerInfo[playerid][pPoints] >= 1000)

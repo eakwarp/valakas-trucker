@@ -205,7 +205,7 @@ stock UpdateCompanys()
 	    if(PlayerInfo[i][pCompanyTime]>0)
 	        PlayerInfo[i][pCompanyTime]--;
 	}
-	mysql_query(MySQL,"UPDATE players SET 'pCompanyTime'-- WHERE pCompanyTime>0 AND online=0",false);
+	mysql_query(MySQL,"UPDATE players SET 'pCompanyTime'='pCompanyTime' - 1 WHERE pCompanyTime>0 AND online=0",false);
 	mysql_query(MySQL,"UPDATE players SET pCompany='-1' WHERE pCompanyTime=0 AND online=0 AND pCompany!='-1'",false);
 	return 1;
 }
