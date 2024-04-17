@@ -255,6 +255,8 @@ new InviteOffer[MAX_PLAYERS]={ INVALID_PLAYER_ID, ... };
 new PlayerTrailer[MAX_PLAYERS];
 new PlayerDeliveryState[MAX_PLAYERS];
 
+new SelectedPlayerid[MAX_PLAYERS];
+
 new CarNames[212][64] =
 {
 "Landstalker",
@@ -956,6 +958,8 @@ public OnGameModeInitTimer()
 	RoadworkInit();
 	OfficeInit();
 	AtmInit();
+	LoadWalkNPCNodes();
+	LoadWNPCAnims();
 	return 1;
 }
 
@@ -1298,6 +1302,16 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		case DIALOG_ADMINVEH:
 		{
 			VehDialogResponse(playerid,response,listitem,inputtext);
+		}
+		case 625:
+		{
+			if(response)
+			    ShowWNPCAnim(playerid,inputtext);
+		}
+		case 730:
+		{
+		    if(response)
+			    SetWNPCAnim(playerid,listitem,inputtext);
 		}
 	}
 	return 1;
@@ -2192,3 +2206,4 @@ public OnPlayerDeath(playerid, killerid, reason)
 #include "systems/company"
 #include "systems/registration"
 #include "systems/atm"
+#include "systems/walknpc"
