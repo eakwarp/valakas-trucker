@@ -157,7 +157,7 @@ public SQL_LoadWalkNPC(i)
 			PlayeridToWNPCid[WalkNPC[i][walknpc_ID]]=i;
 			//PED_SetWalkingStyle(WalkNPC[i][walknpc_ID], 1);
 			//PreloadActorAnimations(WalkNPC[i][walknpc_ID]);
-
+			SetTimerEx("WalkNPCStartMove", 10000, 0, "d", i);
 			WalkNPC[i][walknpc_Created]=1;
 			//WalkNPCStartMove(i);
 			
@@ -180,7 +180,7 @@ public SQL_LoadWalkNPC(i)
 
 public OnNPCConnect(npcid)
 {
-    for(new i; i<MAX_WALKNPC; i++)
+    /*for(new i; i<MAX_WALKNPC; i++)
 	{
 		if(WalkNPC[i][walknpc_Valid]==1)
 		{
@@ -190,14 +190,15 @@ public OnNPCConnect(npcid)
                 //printf("skin %d setted",WalkNPC[i][walknpc_Skin]);
                 //NPC_Spawn(npcid);
                 //print("npc spawned");
-                SetTimerEx("SpawnNPCTimer", 10000, 1, "dd", npcid,i);
+                SetTimerEx("SpawnNPCTimer", 10000, 0, "dd", npcid,i);
                 printf("npc %d wnpc %d start timer",npcid, i);
                 return 1;
             }
         }
-    }
+    }*/
     return 1;
 }
+/*
 forward SpawnNPCTimer(npcid,i);
 public SpawnNPCTimer(npcid,i)
 {
@@ -207,7 +208,7 @@ public SpawnNPCTimer(npcid,i)
     printf("npc %d walk start timer",npcid);
     //WalkNPCStartMove(i);
     return 1;
-}
+}*/
 stock UpdateWalkNPC(i)
 {
     new query[255];
@@ -1258,4 +1259,3 @@ stock FCNPC_GetClosestPlayer(Float:mx, Float:my, Float:mz, &Float:cdist = 65000.
 	}
 	return cid;
 }
-
