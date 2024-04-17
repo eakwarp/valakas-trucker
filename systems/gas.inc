@@ -157,7 +157,36 @@ COMMAND:gasdelete(playerid,params[])
 	SendClientMessage(playerid, COLOR_GRAD2, str);
 	return 1;
 }
-
+COMMAND:usereservefuel(playerid,params[])
+{
+	if(Gas[PlayerInfo[playerid][pCarID]]<1.0)
+	{
+		if(UsedFillCan[playerid]==0)
+		{
+			Gas[PlayerInfo[playerid][pCarID]]=5.0;
+			UsedFillCan[playerid]=1;
+			SendClientMessage(playerid, COLOR_GRAD2, "Вы использовали топливо из канистры завалявшейся в кузове");
+			return 1;
+		}
+		else
+		{
+			SendClientMessage(playerid, COLOR_GRAD2, "Вы уже использовали канистру, увы, это доступно только один раз за игровую сессию");
+		}
+	}
+	return 1;
+}
+COMMAND:fillplayercar(playerid,params[])
+{
+	if(PlayerInfo[playerid][pAdmin]<1)return 1;
+	new i;
+	if (sscanf(params, "u",i))
+    	return SendClientMessage(playerid, COLOR_GRAD2, " ИСПОЛЬЗУЙТЕ: /fillplayercar [id игрока]");
+	Gas[PlayerInfo[i][pCarID]]=100.0;
+	new str[144];
+	format(str,sizeof(str),"Машина игрока %s заправлена",oGetPlayerName(playerid));
+	SendClientMessage(playerid, COLOR_GRAD2, str);
+	return 1;
+}
 
 COMMAND:givemyfuel(playerid,params[])
 {

@@ -2,6 +2,7 @@
 #include "translations/RU"
 #define DISABLE_MODERATE_REGISTRATION //if defined - new players automatically accepted.
 #define INGAMEREGISTER //
+#define DISABLE_RP_NAMES
 /*
 	Original developing by Eakwarp
 	todo:
@@ -126,7 +127,7 @@ new mysql[4][64];
 #define MYSQL_DEBUG 1 //1
 new MySQL:MySQL;
 
-
+new fifthsecbit;
 
 #pragma dynamic 16384
 
@@ -175,6 +176,9 @@ new MySQL:MySQL;
 #define DIALOG_REGMENU 27
 #define DIALOG_NEXTREG 28
 #define DIALOG_ADMINVEH 351
+#define DIALOG_SPEEDLIMIT 992
+#define DIALOG_CUSTOMRADIO 921
+#define DIALOG_CUSTOMRADIOEDIT 922
 
 #define MAX_HOTEL 32
 #define MAX_TRUCKSTOPS 8
@@ -251,11 +255,33 @@ new PlayerRadarDetectID[MAX_PLAYERS];
 new PlayerConvoyCreater[MAX_PLAYERS];
 new PlayerConvoyID[MAX_PLAYERS] = { INVALID_PLAYER_ID, ... };
 new InviteOffer[MAX_PLAYERS]={ INVALID_PLAYER_ID, ... };
+new UsedFillCan[MAX_PLAYERS];
+
+new gPlayerControls[MAX_PLAYERS];
+new gPlayerIndikator[MAX_PLAYERS];
+new IndikatorObjID[MAX_PLAYERS];
+new Float:CarSpeedPos[212][6];
+new IndikatorTime[MAX_PLAYERS];
+new IndikatorValid[MAX_PLAYERS];
+new CameraViewUsed[MAX_PLAYERS];
+new camobj[MAX_PLAYERS];
+new speedobj[MAX_PLAYERS];
+new Float:CarIndikatorPos[212][2][3];
+new CarIndikatorObject[MAX_VEHICLES][4];
+new Float:PlayerViewPos[MAX_PLAYERS][3];
+new Float:CarViewPos[212][3];
+new CarAlarms[MAX_VEHICLES];
+new Float:CarNeonPos[212][3];
+new CarSpeedSize[212];
+
+new custombroadcastuse[MAX_VEHICLES];
+new custombroadcast[MAX_VEHICLES][255];
 
 new PlayerTrailer[MAX_PLAYERS];
 new PlayerDeliveryState[MAX_PLAYERS];
 
 new SelectedPlayerid[MAX_PLAYERS];
+
 
 new CarNames[212][64] =
 {
@@ -407,6 +433,8 @@ enum pInfo
 	pCarNeck,
 	pAccepted,
 	pCarDamper,
+	CarRadio,
+	pTurnType
 };
 new PlayerInfo[MAX_PLAYERS][pInfo];
 stock LoadPlayer(playerid)
@@ -414,7 +442,7 @@ stock LoadPlayer(playerid)
 	new query[2048],playername[MAX_PLAYER_NAME];
 	GetPlayerName(playerid,playername,sizeof(playername));
 	format(query,sizeof(query),"SELECT pAdmin, pMoney, pPoints, pPhone, pHelper, pMutedTime, pSex, pJailTime, pCarModel, pCarColor1, pCarColor2, pCarMileage, pCarX, pCarY, pCarZ, pCarRot, pSpeedoX, pSpeedoY, pTutorial, pTruckStop, pHunger, pFatigue, pBan, pModel, pCarGas, pCarDamagePanels, pCarDamageDoors, pCarDamageLights, pCarDamageTires, pCarOilFilter,");
-	format(query,sizeof(query),"%s pCarAirFilter, pCarBattary, pCarOil, pCarGaskets, pCarSpark, pCarHP, pCarFullHealth, pCarRadarDetector, pCarFuelTank, pCarRadio, pCarAdditive, pCompany, pCompanyTime, pCarNeck, pAccepted, pCarDamper FROM players WHERE Name='%s'",
+	format(query,sizeof(query),"%s pCarAirFilter, pCarBattary, pCarOil, pCarGaskets, pCarSpark, pCarHP, pCarFullHealth, pCarRadarDetector, pCarFuelTank, pCarRadio, pCarAdditive, pCompany, pCompanyTime, pCarNeck, pAccepted, pCarDamper, CarRadio, pTurnType FROM players WHERE Name='%s'",
 	query,
 	playername);
 	mysql_tquery(MySQL, query, "SQL_LoadPlayer", "d", playerid);
@@ -475,6 +503,8 @@ public SQL_LoadPlayer(playerid)
 		cache_get_value_name_int(0,"pCarNeck",PlayerInfo[playerid][pCarNeck]);
 		cache_get_value_name_int(0,"pAccepted",PlayerInfo[playerid][pAccepted]);
 		cache_get_value_name_int(0,"pCarDamper",PlayerInfo[playerid][pCarDamper]);
+		cache_get_value_name_int(0,"CarRadio",PlayerInfo[playerid][CarRadio]);
+		cache_get_value_name_int(0,"pTurnType",PlayerInfo[playerid][pTurnType]);
 		if(PlayerInfo[playerid][pBan])
 			Kick(playerid);
 		ResetPlayerMoney(playerid);
@@ -546,7 +576,7 @@ stock SavePlayer(playerid)
 	PlayerInfo[playerid][pCarDamageTires]);
 	
 	format(query,sizeof(query),
-	"UPDATE players SET pCarDamagePanels=%d, pCarDamageDoors=%d, pCarDamageLights=%d, pCarDamageTires=%d, pCarOilFilter='%f', pCarAirFilter='%f', pCarBattary='%f', pCarOil='%f', pCarGaskets='%f', pCarSpark='%f', pCarHP='%f', pCarFullHealth=%d, pCarRadarDetector=%d, pCarFuelTank=%d, pCarRadio=%d, pCarAdditive=%d, pCompany=%d, pCompanyTime=%d, pCarNeck=%d, pAccepted=%d, pCarDamper=%d WHERE Name='%s'",
+	"UPDATE players SET pCarDamagePanels=%d, pCarDamageDoors=%d, pCarDamageLights=%d, pCarDamageTires=%d, pCarOilFilter='%f', pCarAirFilter='%f', pCarBattary='%f', pCarOil='%f', pCarGaskets='%f', pCarSpark='%f', pCarHP='%f', pCarFullHealth=%d, pCarRadarDetector=%d, pCarFuelTank=%d, pCarRadio=%d, pCarAdditive=%d, pCompany=%d, pCompanyTime=%d, pCarNeck=%d, pAccepted=%d, pCarDamper=%d, CarRadio=%d, pTurnType=%d WHERE Name='%s'",
 	PlayerInfo[playerid][pCarDamagePanels],
 	PlayerInfo[playerid][pCarDamageDoors],
 	PlayerInfo[playerid][pCarDamageLights],
@@ -568,6 +598,8 @@ stock SavePlayer(playerid)
 	PlayerInfo[playerid][pCarNeck],
 	PlayerInfo[playerid][pAccepted],
 	PlayerInfo[playerid][pCarDamper],
+	PlayerInfo[playerid][CarRadio],
+	PlayerInfo[playerid][pTurnType],
 	playername);
 	mysql_query(MySQL, query, false);
 	return 1;
@@ -757,24 +789,29 @@ public OnPlayerConnect(playerid)
 		gEngineStart[playerid]=0;
 		PlayerConvoyCreater[playerid]=0;
 		PlayerConvoyID[playerid] =INVALID_PLAYER_ID;
+		UsedFillCan[playerid] = 0;
+		gPlayerControls[playerid]=0;
 		InviteOffer[playerid]=INVALID_PLAYER_ID;
 		gPlayerUsingLoopingAnim[playerid] = 0;
 		gPlayerAnimLibsPreloaded[playerid] = 0;
 		PlayerDeliveryState[playerid] = 0;
 		PlayerAnim[playerid] = 0;
+		gPlayerIndikator[playerid]=1;
+		IndikatorObjID[playerid]=0;
+		IndikatorTime[playerid]=0;
 		if(IsValidPlayer(playerid))
 		{
 		    StartPlayerLogin(playerid);
 		}
 		else
 		{
-#if defined INGAMEREGISTER
+			#if defined INGAMEREGISTER
 		    StartPlayerRegister(playerid,0);
-#else
+			#else
 			format(str,sizeof(str),"
 			ShowPlayerDialog(playerid,0,DIALOG_STYLE_MSGBOX,"Регистрация","{FFFFFF}Аккаунт не зарегистрирован\nРегистрация на trucker.valakas.ru","Ок","");
             SetTimerEx("kick", 1000, 0, "d", playerid);
-#endif
+			#endif
 		}
 	}
 	return 1;
@@ -830,6 +867,38 @@ public OnPlayerDisconnect(playerid,reason)
 			}
 			SendClientMessage(playerid,COLOR_WHITE,"Вы вышли из конвоя");
 		}
+		if(gPlayerIndikator[playerid]>1)
+		{
+			if(IsValidDynamicObject(IndikatorObjID[playerid]))
+			{
+				DestroyDynamicObject(IndikatorObjID[playerid]);
+				IndikatorObjID[playerid]=0;
+			}
+			new tmpcar=GetPlayerVehicleID(playerid);
+			if(IsValidDynamicObject(CarIndikatorObject[tmpcar][0]))
+			{
+				DestroyDynamicObject(CarIndikatorObject[tmpcar][0]);
+				CarIndikatorObject[tmpcar][0]=0;
+			}
+			if(IsValidDynamicObject(CarIndikatorObject[tmpcar][1]))
+			{
+				DestroyDynamicObject(CarIndikatorObject[tmpcar][1]);
+				CarIndikatorObject[tmpcar][1]=0;
+			}
+			if(IsValidDynamicObject(CarIndikatorObject[tmpcar][2]))
+			{
+				DestroyDynamicObject(CarIndikatorObject[tmpcar][2]);
+				CarIndikatorObject[tmpcar][2]=0;
+			}
+			if(IsValidDynamicObject(CarIndikatorObject[tmpcar][3]))
+			{
+				DestroyDynamicObject(CarIndikatorObject[tmpcar][3]);
+				CarIndikatorObject[tmpcar][3]=0;
+			}
+			CarAlarms[tmpcar]=0;
+			IndikatorValid[playerid]=0;
+			IndikatorTime[playerid]=0;
+		}
 	    Spec(playerid,0,3);
 	    Spec(playerid,0,7);
 	    LbtDestroy(playerid);
@@ -845,6 +914,13 @@ public OnPlayerDisconnect(playerid,reason)
 		    PlayerInfo[playerid][pLogin]=0;
 		    if(PlayerInfo[playerid][pCarModel]!=0)
 				DestroyVehicle(PlayerInfo[playerid][pCarID]);
+		}
+		if(CameraViewUsed[playerid] == 1)
+		{
+			SetCameraBehindPlayer(playerid);
+			DestroyObject(camobj[playerid]);
+			DestroyObject(speedobj[playerid]);
+			CameraViewUsed[playerid]=0;
 		}
 	}
 	return 1;
@@ -886,6 +962,368 @@ COMMAND:pay(playerid, params[])
 
 //------------------------------------------------------------------------------------------------------
 
+public OnPlayerStateChange(playerid, newstate, oldstate)
+{
+	Spec(playerid,0,4);
+	if(oldstate == PLAYER_STATE_DRIVER)
+	{
+	    if(CameraViewUsed[playerid] == 1)
+		{
+			AttachObjectToPlayer(camobj[playerid],playerid,PlayerViewPos[playerid][0],PlayerViewPos[playerid][1],PlayerViewPos[playerid][2], 0.000000, 0.000000, 0.000000);
+	        AttachCameraToObject(playerid,camobj[playerid]);
+		}
+	}
+	if(newstate == PLAYER_STATE_ONFOOT)
+	{
+		if(gPlayerIndikator[playerid]>1)
+		{
+		    if(IsValidDynamicObject(IndikatorObjID[playerid]))
+		    {
+				DestroyDynamicObject(IndikatorObjID[playerid]);
+				IndikatorObjID[playerid]=0;
+			}
+		    new tmpcar=GetPlayerVehicleID(playerid);
+	       	if(IsValidDynamicObject(CarIndikatorObject[tmpcar][0]))
+	       	{
+	            DestroyDynamicObject(CarIndikatorObject[tmpcar][0]);
+                CarIndikatorObject[tmpcar][0]=0;
+			}
+	        if(IsValidDynamicObject(CarIndikatorObject[tmpcar][1]))
+	        {
+	            DestroyDynamicObject(CarIndikatorObject[tmpcar][1]);
+	            CarIndikatorObject[tmpcar][1]=0;
+			}
+	        if(IsValidDynamicObject(CarIndikatorObject[tmpcar][2]))
+	        {
+	            DestroyDynamicObject(CarIndikatorObject[tmpcar][2]);
+	            CarIndikatorObject[tmpcar][2]=0;
+			}
+	        if(IsValidDynamicObject(CarIndikatorObject[tmpcar][3]))
+			{
+	            DestroyDynamicObject(CarIndikatorObject[tmpcar][3]);
+	            CarIndikatorObject[tmpcar][3]=0;
+			}
+		    CarAlarms[tmpcar]=0;
+		    IndikatorValid[playerid]=0;
+		    gPlayerIndikator[playerid]=1;
+		    IndikatorTime[playerid]=0;
+		}
+	}
+	return 1;
+}
+
+enum radioinfo
+{
+	radioName[128],
+	radioURL[255]
+}
+new RadioInfo[][radioinfo]={
+{"Easy Hits Florida","http://airspectrum.cdnstream1.com:8114/1648_128"},
+{"Magic 80s Florida","http://airspectrum.cdnstream1.com:8018/1606_192"},
+{"RnB Channel (HD)","http://192.99.8.192:3132/stream"},
+{"Country 603","http://us2.internet-radio.com:8087/live"},
+{"Frontier Country","http://192.111.140.11:8205/stream"},
+{"Hot Hitz 80's","http://63.143.40.238:9900/stream"},
+{"Classic Hits 109 - 70s,80s,90s","http://51.161.115.200:8142/stream"},
+{"Blues Radio","http://i4.streams.ovh:8352/stream"},
+{"BluesMen Channel (Gold)","http://173.249.21.17:8114/stream"},
+{"PARTY VIBE RADIO : REGGAE","http://94.130.242.5:8000/stream"}
+};
+
+stock StartCustomRadioSwitch(playerid)
+{
+	new carid = GetPlayerVehicleID(playerid);
+	if(carid<sizeof(CarInfo))
+	{
+		if(custombroadcastuse[carid]==0)
+		{
+		    ShowCarCustomRadioList(playerid);
+		    //ShowCustomRadioList(playerid,921,DIALOG_STYLE_LIST,"Изменение радио",
+		    //ShowPlayerDialog(playerid,520,DIALOG_STYLE_INPUT,"Изменение радио","Введите ссылку на радиопоток:","Ввод","Отмена");
+		}
+		else
+		{
+		    custombroadcastuse[carid]=0;
+		    SendClientMessage(playerid,COLOR_RED,"Кастомное радио отключено");
+		}
+	}
+	return 1;
+}
+stock ShowCarCustomRadioList(playerid)
+{
+	new str[4096];
+	for(new i=0; i<sizeof(RadioInfo); i++)
+	{
+		format(str,4096,"%s%s\n",str,RadioInfo[i][radioName]);
+	}
+	format(str,4096,"%sСвоя ссылка",str);
+	ShowPlayerDialog(playerid,DIALOG_CUSTOMRADIO,DIALOG_STYLE_LIST,"Выберите радиостанцию",str,"Выбор","Отмена");
+	return 1;
+}
+stock SetCustomBroadcastingUrl(playerid,const inputtext[])
+{
+    new carid = GetPlayerVehicleID(playerid);
+	if(carid<sizeof(CarInfo))
+	{
+	    if(strlen(inputtext)>255) return 1;
+	    strmid(custombroadcast[carid], inputtext, 0, strlen(inputtext), 255);
+		SendClientMessage(playerid,COLOR_GREEN,"Кастомное радио включено, ссылка:");
+		new str[144];
+		format(str,sizeof(str),"%s",custombroadcast[carid]);
+		SendClientMessage(playerid,COLOR_GREEN,str);
+		custombroadcastuse[carid]=1;
+	}
+	return 1;
+}
+stock BroadcastSwitch(playerid)
+{
+	new carid=GetPlayerVehicleID(playerid);
+	if(GetPlayerState(playerid) == PLAYER_STATE_DRIVER)
+	{
+		if(PlayerInfo[playerid][CarRadio]==0)
+		{
+			PlayerInfo[playerid][CarRadio]=1;
+			if(!custombroadcastuse[carid])return 1;
+			foreach(Player,i)
+			{
+				if(GetPlayerVehicleID(i)==carid)
+				{
+					if(custombroadcastuse[carid])
+					{
+						PlayAudioStreamForPlayer(i,custombroadcast[carid]);
+					}
+
+				}
+			}
+		}
+		else
+		{
+			PlayerInfo[playerid][CarRadio]=0;
+			if(!custombroadcastuse[carid])return 1;
+			foreach(Player,i)
+			{
+				if(GetPlayerVehicleID(i)==carid)
+				{
+					StopAudioStreamForPlayer(i);
+				}
+			}
+		}
+    	
+	}
+	return 1;
+}
+
+stock CarAlarmUse(tmpcar)
+{
+	if(CarAlarms[tmpcar])
+	{
+	    if(IsValidDynamicObject(CarIndikatorObject[tmpcar][0]))
+	    {
+            DestroyDynamicObject(CarIndikatorObject[tmpcar][0]);
+            CarIndikatorObject[tmpcar][0]=0;
+		}
+        if(IsValidDynamicObject(CarIndikatorObject[tmpcar][1]))
+        {
+            DestroyDynamicObject(CarIndikatorObject[tmpcar][1]);
+            CarIndikatorObject[tmpcar][1]=0;
+		}
+        if(IsValidDynamicObject(CarIndikatorObject[tmpcar][2]))
+        {
+            DestroyDynamicObject(CarIndikatorObject[tmpcar][2]);
+            CarIndikatorObject[tmpcar][2]=0;
+		}
+        if(IsValidDynamicObject(CarIndikatorObject[tmpcar][3]))
+        {
+            DestroyDynamicObject(CarIndikatorObject[tmpcar][3]);
+            CarIndikatorObject[tmpcar][3]=0;
+		}
+	    CarAlarms[tmpcar]=0;
+	}
+	else
+	{
+	    new m=GetVehicleModel(tmpcar);
+	    new p=tmpcar;
+	    if(!IsValidDynamicObject(CarIndikatorObject[p][0]))//зад пр
+			CarIndikatorObject[p][0]=CreateDynamicObject(19294,0.0,0.0,0.0, 0.0,0.0,0.0);
+		AttachDynamicObjectToVehicle(CarIndikatorObject[p][0],p,CarIndikatorPos[m-400][0][0],CarIndikatorPos[m-400][0][1],CarIndikatorPos[m-400][0][2], 0.0,0.0,0.0);
+	    if(!IsValidDynamicObject(CarIndikatorObject[p][1]))//зад лев
+			CarIndikatorObject[p][1]=CreateDynamicObject(19294,0.0,0.0,0.0, 0.0,0.0,0.0);
+		AttachDynamicObjectToVehicle(CarIndikatorObject[p][1],p,-CarIndikatorPos[m-400][0][0],CarIndikatorPos[m-400][0][1],CarIndikatorPos[m-400][0][2], 0.0,0.0,0.0);
+		if(!IsValidDynamicObject(CarIndikatorObject[p][2]))//перед пр
+			CarIndikatorObject[p][2]=CreateDynamicObject(19294,0.0,0.0,0.0, 0.0,0.0,0.0);
+		AttachDynamicObjectToVehicle(CarIndikatorObject[p][2],p,CarIndikatorPos[m-400][1][0],CarIndikatorPos[m-400][1][1],CarIndikatorPos[m-400][1][2], 0.0,0.0,0.0);
+		if(!IsValidDynamicObject(CarIndikatorObject[p][3]))//перед лев
+			CarIndikatorObject[p][3]=CreateDynamicObject(19294,0.0,0.0,0.0, 0.0,0.0,0.0);
+		AttachDynamicObjectToVehicle(CarIndikatorObject[p][3],p,-CarIndikatorPos[m-400][1][0],CarIndikatorPos[m-400][1][1],CarIndikatorPos[m-400][1][2], 0.0,0.0,0.0);
+		CarAlarms[tmpcar]=1;
+	}
+	return 1;
+}
+new FlashNum[MAX_VEHICLES];
+forward StartLightFlash(carid); public StartLightFlash(carid)
+{
+    FlashNum[carid]=5;
+    new engine,lights,alarm,doors,bonnet,boot,objective;
+	GetVehicleParamsEx(carid,engine,lights,alarm,doors,bonnet,boot,objective);
+	if(lights==VEHICLE_PARAMS_ON)
+		SetVehicleParamsEx(carid,engine,VEHICLE_PARAMS_OFF,alarm,doors,bonnet,boot,objective);
+	else
+		SetVehicleParamsEx(carid,engine,VEHICLE_PARAMS_ON,alarm,doors,bonnet,boot,objective);
+    SetTimerEx("EndLightFlash",300,0,"d",carid);
+	return 1;
+}
+
+forward EndLightFlash(carid); public EndLightFlash(carid)
+{
+    FlashNum[carid]--;
+    new engine,lights,alarm,doors,bonnet,boot,objective;
+	GetVehicleParamsEx(carid,engine,lights,alarm,doors,bonnet,boot,objective);
+	if(lights==VEHICLE_PARAMS_ON)
+		SetVehicleParamsEx(carid,engine,VEHICLE_PARAMS_OFF,alarm,doors,bonnet,boot,objective);
+	else
+		SetVehicleParamsEx(carid,engine,VEHICLE_PARAMS_ON,alarm,doors,bonnet,boot,objective);
+    if(FlashNum[carid]>0)
+    {
+        SetTimerEx("EndLightFlash",300,0,"d",carid);
+    }
+	return 1;
+}
+
+stock StartSpeedlimitSwitch(playerid)
+{
+	ShowPlayerDialog(playerid,DIALOG_SPEEDLIMIT,DIALOG_STYLE_LIST,"Выберите лимит скорости для автомобиля","20\n40\n60\n90\nВыключен","Выбор","Отмена");
+	return 1;
+}
+stock SetSpeedLimit(playerid,limit)
+{
+	if(limit < 1)
+	{
+	    DisablePlayerSpeedCap(playerid);
+	    SpeedLimit[playerid]=0;
+	    SendClientMessage(playerid, COLOR_GREEN, "* Лимит скорости снят");
+	    return 1;
+	}
+	new string[128];
+	SpeedLimit[playerid]=limit;
+	format(string,sizeof(string),"0.%d",SpeedLimit[playerid]);
+	g_fSpeedCap[playerid] = floatstr(string)/2;
+	g_fSpeedCap[playerid]/=1.4;
+	format(string, sizeof(string), "* Лимит скорости установлен в: %d м/ч", SpeedLimit[playerid]);
+	SendClientMessage(playerid, COLOR_GREEN, string);
+	return 1;
+}
+
+forward StartAlarmFlash(carid); public StartAlarmFlash(carid)
+{
+    CarAlarmUse(carid);
+	SetTimerEx("EndAlarmFlash",1500,0,"d",carid);
+	return 1;
+}
+forward EndAlarmFlash(carid); public EndAlarmFlash(carid)
+{
+	CarAlarmUse(carid);
+	return 1;
+}
+
+stock BroadCastExitCar(playerid)
+{
+    StopAudioStreamForPlayer(playerid);
+	return 1;
+}
+
+public OnPlayerExitVehicle(playerid, vehicleid)
+{
+	Spec(playerid,0,4);
+    BroadCastExitCar(playerid);
+    if(CameraViewUsed[playerid] == 1)
+	{
+		AttachObjectToPlayer(camobj[playerid],playerid,PlayerViewPos[playerid][0],PlayerViewPos[playerid][1],PlayerViewPos[playerid][2], 0.000000, 0.000000, 0.000000);
+        AttachCameraToObject(playerid,camobj[playerid]);
+	}
+    if(gPlayerIndikator[playerid]>1)
+	{
+	    //if(IndikatorValid[playerid])DestroyDynamicObject(IndikatorObjID[playerid]);
+        if(IsValidDynamicObject(IndikatorObjID[playerid]))
+	    {
+			DestroyDynamicObject(IndikatorObjID[playerid]);
+			IndikatorObjID[playerid]=0;
+		}
+		new tmpcar=GetPlayerVehicleID(playerid);
+	    if(IsValidDynamicObject(CarIndikatorObject[tmpcar][0]))
+       	{
+            DestroyDynamicObject(CarIndikatorObject[tmpcar][0]);
+            CarIndikatorObject[tmpcar][0]=0;
+		}
+        if(IsValidDynamicObject(CarIndikatorObject[tmpcar][1]))
+        {
+            DestroyDynamicObject(CarIndikatorObject[tmpcar][1]);
+            CarIndikatorObject[tmpcar][1]=0;
+		}
+        if(IsValidDynamicObject(CarIndikatorObject[tmpcar][2]))
+        {
+            DestroyDynamicObject(CarIndikatorObject[tmpcar][2]);
+            CarIndikatorObject[tmpcar][2]=0;
+		}
+        if(IsValidDynamicObject(CarIndikatorObject[tmpcar][3]))
+		{
+            DestroyDynamicObject(CarIndikatorObject[tmpcar][3]);
+            CarIndikatorObject[tmpcar][3]=0;
+		}
+	    CarAlarms[tmpcar]=0;
+	    IndikatorValid[playerid]=0;
+	    gPlayerIndikator[playerid]=1;
+	    IndikatorTime[playerid]=0;
+	}
+	return 1;
+}
+
+COMMAND:turn(playerid,params[])
+{
+	if(gPlayerIndikator[playerid]==0)
+	{
+	    gPlayerIndikator[playerid]=1;
+	    SendClientMessage(playerid, COLOR_GREEN, " Вы включили управление поворотниками. Используйте Q и E для переключения.");
+	}
+	else if(gPlayerIndikator[playerid]>=1)
+	{
+	    SendClientMessage(playerid, COLOR_RED, " Вы выключили управление поворотниками.");
+	    if(gPlayerIndikator[playerid]>1)
+	    {
+	        if(IsValidDynamicObject(IndikatorObjID[playerid]))
+		    {
+				DestroyDynamicObject(IndikatorObjID[playerid]);
+				IndikatorObjID[playerid]=0;
+			}
+            new tmpcar=GetPlayerVehicleID(playerid);
+            if(IsValidDynamicObject(CarIndikatorObject[tmpcar][0]))
+	       	{
+	            DestroyDynamicObject(CarIndikatorObject[tmpcar][0]);
+                CarIndikatorObject[tmpcar][0]=0;
+			}
+	        if(IsValidDynamicObject(CarIndikatorObject[tmpcar][1]))
+	        {
+	            DestroyDynamicObject(CarIndikatorObject[tmpcar][1]);
+	            CarIndikatorObject[tmpcar][1]=0;
+			}
+	        if(IsValidDynamicObject(CarIndikatorObject[tmpcar][2]))
+	        {
+	            DestroyDynamicObject(CarIndikatorObject[tmpcar][2]);
+	            CarIndikatorObject[tmpcar][2]=0;
+			}
+	        if(IsValidDynamicObject(CarIndikatorObject[tmpcar][3]))
+			{
+	            DestroyDynamicObject(CarIndikatorObject[tmpcar][3]);
+	            CarIndikatorObject[tmpcar][3]=0;
+			}
+		    CarAlarms[tmpcar]=0;
+	        IndikatorValid[playerid]=0;
+	        IndikatorTime[playerid]=0;
+	    }
+	    gPlayerIndikator[playerid]=0;
+	}
+	return 1;
+}
+
 public OnPlayerSpawn(playerid)
 {
 	if(!PlayerInfo[playerid][pLogin])
@@ -898,10 +1336,12 @@ public OnPlayerSpawn(playerid)
     //TogglePlayerClock(playerid,1);
 
     if(!PlayerInfo[playerid][pAccepted])
-#if defined DISABLE_MODERATE_REGISTRATION
+#if !defined DISABLE_MODERATE_REGISTRATION
         return CheckRegStatus(playerid);
 #else
+	{
 		PlayerInfo[playerid][pAccepted]=1;
+	}
 #endif
     if(!PlayerInfo[playerid][pTutorial])
 		return PlayerTutorial(playerid,0);
@@ -960,6 +1400,7 @@ public OnGameModeInitTimer()
 	AtmInit();
 	LoadWalkNPCNodes();
 	LoadWNPCAnims();
+	LoadViewPos();
 	return 1;
 }
 
@@ -1030,12 +1471,14 @@ stock StartPlayerLogin(playerid)
 
 stock StartPlayerRegister(playerid,reason)
 {
-	if(!IsValidNickname(playerid))
+	#if !defined DISABLE_RP_NAMES
+	if(!IsValidRPNickname(playerid))
 	{
 	    ShowPlayerDialog(playerid,0,DIALOG_STYLE_MSGBOX," ","Ник вашего персонажа не соответствует правилам сервера,\nдальнейшая регистрация не возможна, вы кикнуты","Ок","");
 		SetTimerEx("kick", 1000, 0, "d", playerid);
 		return 1;
 	}
+	#endif
     new str[255];
     switch(reason)
     {
@@ -1313,6 +1756,46 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		    if(response)
 			    SetWNPCAnim(playerid,listitem,inputtext);
 		}
+		case DIALOG_CUSTOMRADIO:
+		{
+		    if(response)
+		    {
+		        if(listitem<sizeof(RadioInfo))
+		        {
+		            new boomboxurl[255];
+					format(boomboxurl,255,"%s",RadioInfo[listitem][radioURL]);
+					SetCustomBroadcastingUrl(playerid,boomboxurl);
+		        }
+		    	else ShowPlayerDialog(playerid,DIALOG_CUSTOMRADIOEDIT,DIALOG_STYLE_INPUT,"Изменение радио","Введите ссылку на радиопоток:","Ввод","Отмена");
+		    }
+		}
+		case DIALOG_CUSTOMRADIOEDIT:
+		{
+		    if(response)
+		    {
+		        if(strfind(inputtext,"%")!=-1)
+				{
+					SendClientMessage(playerid,COLOR_RED,"Недопустимая ссылка");
+					return 1;
+				}
+		        SetCustomBroadcastingUrl(playerid,inputtext);
+		    }
+		    return 1;
+		}
+		case DIALOG_SPEEDLIMIT:
+		{
+			if(response)
+			{
+			    switch(listitem)
+			    {
+			        case 0:SetSpeedLimit(playerid,20);
+					case 1:SetSpeedLimit(playerid,40);
+					case 2:SetSpeedLimit(playerid,60);
+					case 3:SetSpeedLimit(playerid,90);
+					case 4:SetSpeedLimit(playerid,0);
+			    }
+			}
+		}
 	}
 	return 1;
 }
@@ -1355,6 +1838,8 @@ new CoffeeBit[MAX_PLAYERS];
 forward OneSecTimer();
 public OneSecTimer()
 {
+	if(fifthsecbit==1)fifthsecbit=0;
+	else fifthsecbit=1;
     new h,m,s;
 	gettime(h,m,s);
 	if(tmphour != h)
@@ -1444,16 +1929,16 @@ public OneSecTimer()
 			        if(PlayerInfo[i][pCarAdditive])
 			        {
 			        	if(PlayerInfo[i][pSpeed]>10.0)
-			        		Gas[carid]-=0.035;
+			        		Gas[carid]-=0.0035;
 						else
-						    Gas[carid]-=0.0175;
+						    Gas[carid]-=0.00175;
 				    }
 			        else
 			        {
 						if(PlayerInfo[i][pSpeed]>10.0)
-							Gas[carid]-=0.05;
+							Gas[carid]-=0.005;
 				        else
-				            Gas[carid]-=0.025;
+				            Gas[carid]-=0.0025;
 				    }
 				}
 				if(Gas[carid]<0.0)
@@ -1531,10 +2016,10 @@ public OneSecTimer()
 			Signal[i]=GetSignal(i);
 		if(Signal[i]<1)CallDeath(i);
 		if(PlayerInfo[i][pHunger]<100.0)
-		    PlayerInfo[i][pHunger]+=0.03;
+		    PlayerInfo[i][pHunger]+=0.003;
 
 		if(PlayerInfo[i][pFatigue]<100.0)
-		    PlayerInfo[i][pFatigue]+=0.015;
+		    PlayerInfo[i][pFatigue]+=0.0015;
 	}
 	minbit++;
 	if(minbit==60)
@@ -1666,6 +2151,16 @@ COMMAND:speedlimit(playerid,params[])
 	    SendClientMessage(playerid,COLOR_WHITE, " ИСПОЛЬЗОВАНИЕ: /speedlimit [максимальная скорость] (0 для снятия лимита)" );
 	return 1;
 }
+stock SetCarSpeedLimit(playerid,Float:limit)
+{
+
+	SpeedLimit[playerid]=floatround(limit);
+	new string[32];
+	format(string,sizeof(string),"0.%d",SpeedLimit[playerid]);
+	g_fSpeedCap[playerid] = floatstr(string);
+	g_fSpeedCap[playerid]/=1.4;
+	return 1;
+}
 
 stock DisablePlayerSpeedCap( playerid )
 {
@@ -1694,6 +2189,9 @@ stock CreatePlayerCar(playerid)
 		new engine,lights,alarm,doors,bonnet,boot,objective;
 		GetVehicleParamsEx(PlayerInfo[playerid][pCarID],engine,lights,alarm,doors,bonnet,boot,objective);
 		SetVehicleParamsEx(PlayerInfo[playerid][pCarID],VEHICLE_PARAMS_OFF,VEHICLE_PARAMS_OFF,alarm,doors,bonnet,boot,objective);
+		new strb[32];
+		format(strb,sizeof(strb),"SA %03d",PlayerInfo[playerid][pCarID]);
+		SetVehicleNumberPlate(PlayerInfo[playerid][pCarID],strb);
 	}
 	return 1;
 }
@@ -1741,7 +2239,7 @@ public OnPlayerUpdate(playerid)
 			}
 		}
 	}
-
+	CameraOnPlayerUpdate(playerid);
 	return 1;
 }
 
@@ -1754,10 +2252,277 @@ public ParkS(playerid)
 	cmd_park(playerid,"");
 	return 1;
 }
+
+#define PRESSED(%0) (((newkeys & (%0)) == (%0)) && ((oldkeys & (%0)) != (%0)))
+
 public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 {
     AchatKeyLst(playerid,newkeys);
     SpecOnPlayerKeyStateChange(playerid, newkeys);
+	if(GetPlayerState(playerid) == PLAYER_STATE_DRIVER)
+	{
+		if(gPlayerIndikator[playerid]!=0)
+		{
+			if(PRESSED(KEY_LOOK_LEFT))
+			{
+				if(gPlayerIndikator[playerid]==3)
+				{
+					if(IsValidDynamicObject(IndikatorObjID[playerid]))
+					{
+						DestroyDynamicObject(IndikatorObjID[playerid]);
+						IndikatorObjID[playerid]=0;
+					}
+					new Float:x,Float:y,Float:z,Float:a,tmpcar;
+					//GetPlayerPos(playerid,x,y,z);
+					tmpcar=GetPlayerVehicleID(playerid);
+					//if(IsAPlane(tmpcar))return 1;
+					GetVehiclePos(tmpcar,x,y,z);
+					GetVehicleZAngle(tmpcar,a);
+					if(PlayerInfo[playerid][pTurnType]!=1)
+					{
+						IndikatorObjID[playerid]=CreateDynamicObject(19131,x,y,z,0.0,0.0,0.0);
+						if(!IsABigVehicle(tmpcar))
+							AttachDynamicObjectToVehicle(IndikatorObjID[playerid], tmpcar, -0.5, 0.0, 1.5, 0.0,0.0,-90.0);
+						else
+							AttachDynamicObjectToVehicle(IndikatorObjID[playerid], tmpcar, -0.5, 0.0, 3.0, 0.0,0.0,-90.0);
+					}
+					new m=GetVehicleModel(tmpcar);
+					if(IsValidDynamicObject(CarIndikatorObject[tmpcar][0]))
+					{
+						DestroyDynamicObject(CarIndikatorObject[tmpcar][0]);
+						CarIndikatorObject[tmpcar][0]=0;
+					}
+					if(IsValidDynamicObject(CarIndikatorObject[tmpcar][2]))
+					{
+						DestroyDynamicObject(CarIndikatorObject[tmpcar][2]);
+						CarIndikatorObject[tmpcar][2]=0;
+					}
+					if(PlayerInfo[playerid][pTurnType]!=2)
+					{
+						if(!IsValidDynamicObject(CarIndikatorObject[tmpcar][1]))//caa eaa
+							CarIndikatorObject[tmpcar][1]=CreateDynamicObject(19294,0.0,0.0,0.0, 0.0,0.0,0.0);
+						AttachDynamicObjectToVehicle(CarIndikatorObject[tmpcar][1],tmpcar,-CarIndikatorPos[m-400][0][0],CarIndikatorPos[m-400][0][1],CarIndikatorPos[m-400][0][2], 0.0,0.0,0.0);
+						
+						if(!IsValidDynamicObject(CarIndikatorObject[tmpcar][3]))//ia?aa eaa
+							CarIndikatorObject[tmpcar][3]=CreateDynamicObject(19294,0.0,0.0,0.0, 0.0,0.0,0.0);
+						AttachDynamicObjectToVehicle(CarIndikatorObject[tmpcar][3],tmpcar,-CarIndikatorPos[m-400][1][0],CarIndikatorPos[m-400][1][1],CarIndikatorPos[m-400][1][2], 0.0,0.0,0.0);
+					}
+					CarAlarms[tmpcar]=0;
+					IndikatorValid[playerid]=1;
+					gPlayerIndikator[playerid]=2;
+					//GameTextForPlayer(playerid, "~r~<left turn<", 2000, 6);
+					IndikatorTime[playerid]=24;
+				}
+				else if(gPlayerIndikator[playerid]==2)//
+				{
+					if(IsValidDynamicObject(IndikatorObjID[playerid]))
+					{
+						DestroyDynamicObject(IndikatorObjID[playerid]);
+						IndikatorObjID[playerid]=0;
+					}
+					new tmpcar=GetPlayerVehicleID(playerid);
+					if(IsValidDynamicObject(CarIndikatorObject[tmpcar][0]))
+					{
+						DestroyDynamicObject(CarIndikatorObject[tmpcar][0]);
+						CarIndikatorObject[tmpcar][0]=0;
+					}
+					if(IsValidDynamicObject(CarIndikatorObject[tmpcar][1]))
+					{
+						DestroyDynamicObject(CarIndikatorObject[tmpcar][1]);
+						CarIndikatorObject[tmpcar][1]=0;
+					}
+					if(IsValidDynamicObject(CarIndikatorObject[tmpcar][2]))
+					{
+						DestroyDynamicObject(CarIndikatorObject[tmpcar][2]);
+						CarIndikatorObject[tmpcar][2]=0;
+					}
+					if(IsValidDynamicObject(CarIndikatorObject[tmpcar][3]))
+					{
+						DestroyDynamicObject(CarIndikatorObject[tmpcar][3]);
+						CarIndikatorObject[tmpcar][3]=0;
+					}
+					CarAlarms[tmpcar]=0;
+					IndikatorValid[playerid]=0;
+					gPlayerIndikator[playerid]=1;
+					//GameTextForPlayer(playerid, "~r~turn off", 2000, 6);
+					IndikatorTime[playerid]=0;
+				}
+				else if(gPlayerIndikator[playerid]==1)
+				{
+					new Float:x,Float:y,Float:z,Float:a,tmpcar;
+					//GetPlayerPos(playerid,x,y,z);
+					tmpcar=GetPlayerVehicleID(playerid);
+					if(IsAPlane(tmpcar))return 1;
+					GetVehiclePos(tmpcar,x,y,z);
+					GetVehicleZAngle(tmpcar,a);
+					if(PlayerInfo[playerid][pTurnType]!=1)
+					{
+						IndikatorObjID[playerid]=CreateDynamicObject(19131,x,y,z,0.0,0.0,0.0);
+						if(!IsABigVehicle(tmpcar))
+							AttachDynamicObjectToVehicle(IndikatorObjID[playerid], tmpcar, -0.5, 0.0, 1.5, 0.0,0.0,-90.0);
+						else
+							AttachDynamicObjectToVehicle(IndikatorObjID[playerid], tmpcar, -0.5, 0.0, 3.0, 0.0,0.0,-90.0);
+					}
+					new m=GetVehicleModel(tmpcar);
+					if(IsValidDynamicObject(CarIndikatorObject[tmpcar][0]))
+					{
+						DestroyDynamicObject(CarIndikatorObject[tmpcar][0]);
+						CarIndikatorObject[tmpcar][0]=0;
+					}
+					if(IsValidDynamicObject(CarIndikatorObject[tmpcar][2]))
+					{
+						DestroyDynamicObject(CarIndikatorObject[tmpcar][2]);
+						CarIndikatorObject[tmpcar][2]=0;
+					}
+					if(PlayerInfo[playerid][pTurnType]!=2)
+					{
+						if(!IsValidDynamicObject(CarIndikatorObject[tmpcar][1]))//caa eaa
+							CarIndikatorObject[tmpcar][1]=CreateDynamicObject(19294,0.0,0.0,0.0, 0.0,0.0,0.0);
+						AttachDynamicObjectToVehicle(CarIndikatorObject[tmpcar][1],tmpcar,-CarIndikatorPos[m-400][0][0],CarIndikatorPos[m-400][0][1],CarIndikatorPos[m-400][0][2], 0.0,0.0,0.0);
+					
+						if(!IsValidDynamicObject(CarIndikatorObject[tmpcar][3]))//ia?aa eaa
+							CarIndikatorObject[tmpcar][3]=CreateDynamicObject(19294,0.0,0.0,0.0, 0.0,0.0,0.0);
+						AttachDynamicObjectToVehicle(CarIndikatorObject[tmpcar][3],tmpcar,-CarIndikatorPos[m-400][1][0],CarIndikatorPos[m-400][1][1],CarIndikatorPos[m-400][1][2], 0.0,0.0,0.0);
+					}
+					CarAlarms[tmpcar]=0;
+					IndikatorValid[playerid]=1;
+					gPlayerIndikator[playerid]=2;
+					//GameTextForPlayer(playerid, "~r~<left turn<", 2000, 6);
+					IndikatorTime[playerid]=24;
+				}
+			}
+			if(PRESSED(KEY_LOOK_RIGHT))
+			{
+				if(gPlayerIndikator[playerid]==2)
+				{
+					if(IsValidDynamicObject(IndikatorObjID[playerid]))
+					{
+						DestroyDynamicObject(IndikatorObjID[playerid]);
+						IndikatorObjID[playerid]=0;
+					}
+					new Float:x,Float:y,Float:z,Float:a,tmpcar;
+					//GetPlayerPos(playerid,x,y,z);
+					tmpcar=GetPlayerVehicleID(playerid);
+					if(IsAPlane(tmpcar))return 1;
+					GetVehiclePos(tmpcar,x,y,z);
+					GetVehicleZAngle(tmpcar,a);
+					if(PlayerInfo[playerid][pTurnType]!=1)
+					{
+						IndikatorObjID[playerid]=CreateDynamicObject(19131,x,y,z,0.0,0.0,0.0);
+						if(!IsABigVehicle(tmpcar))
+							AttachDynamicObjectToVehicle(IndikatorObjID[playerid], tmpcar, 0.5,0.0, 1.5, 0.0,0.0,90.0);
+						else
+							AttachDynamicObjectToVehicle(IndikatorObjID[playerid], tmpcar, 0.5,0.0, 3.0, 0.0,0.0,90.0);
+					}
+					new m=GetVehicleModel(tmpcar);
+					if(IsValidDynamicObject(CarIndikatorObject[tmpcar][1]))
+					{
+						DestroyDynamicObject(CarIndikatorObject[tmpcar][1]);
+						CarIndikatorObject[tmpcar][1]=0;
+					}
+					if(IsValidDynamicObject(CarIndikatorObject[tmpcar][3]))
+					{
+						DestroyDynamicObject(CarIndikatorObject[tmpcar][3]);
+						CarIndikatorObject[tmpcar][3]=0;
+					}
+					if(PlayerInfo[playerid][pTurnType]!=2)
+					{
+						if(!IsValidDynamicObject(CarIndikatorObject[tmpcar][0]))//caa eaa
+							CarIndikatorObject[tmpcar][0]=CreateDynamicObject(19294,0.0,0.0,0.0, 0.0,0.0,0.0);
+						AttachDynamicObjectToVehicle(CarIndikatorObject[tmpcar][0],tmpcar,CarIndikatorPos[m-400][0][0],CarIndikatorPos[m-400][0][1],CarIndikatorPos[m-400][0][2], 0.0,0.0,0.0);
+						
+						if(!IsValidDynamicObject(CarIndikatorObject[tmpcar][2]))//ia?aa eaa
+							CarIndikatorObject[tmpcar][2]=CreateDynamicObject(19294,0.0,0.0,0.0, 0.0,0.0,0.0);
+						AttachDynamicObjectToVehicle(CarIndikatorObject[tmpcar][2],tmpcar,CarIndikatorPos[m-400][1][0],CarIndikatorPos[m-400][1][1],CarIndikatorPos[m-400][1][2], 0.0,0.0,0.0);
+					}
+					CarAlarms[tmpcar]=0;
+					IndikatorValid[playerid]=1;
+					gPlayerIndikator[playerid]=3;
+					//GameTextForPlayer(playerid, "~r~>right turn>", 2000, 6);
+					IndikatorTime[playerid]=24;
+				}
+				else if(gPlayerIndikator[playerid]==3)//
+				{
+					if(IsValidDynamicObject(IndikatorObjID[playerid]))
+					{
+						DestroyDynamicObject(IndikatorObjID[playerid]);
+						IndikatorObjID[playerid]=0;
+					}
+					new tmpcar=GetPlayerVehicleID(playerid);
+					if(IsValidDynamicObject(CarIndikatorObject[tmpcar][0]))
+					{
+						DestroyDynamicObject(CarIndikatorObject[tmpcar][0]);
+						CarIndikatorObject[tmpcar][0]=0;
+					}
+					if(IsValidDynamicObject(CarIndikatorObject[tmpcar][1]))
+					{
+						DestroyDynamicObject(CarIndikatorObject[tmpcar][1]);
+						CarIndikatorObject[tmpcar][1]=0;
+					}
+					if(IsValidDynamicObject(CarIndikatorObject[tmpcar][2]))
+					{
+						DestroyDynamicObject(CarIndikatorObject[tmpcar][2]);
+						CarIndikatorObject[tmpcar][2]=0;
+					}
+					if(IsValidDynamicObject(CarIndikatorObject[tmpcar][3]))
+					{
+						DestroyDynamicObject(CarIndikatorObject[tmpcar][3]);
+						CarIndikatorObject[tmpcar][3]=0;
+					}
+					CarAlarms[tmpcar]=0;
+					IndikatorValid[playerid]=0;
+					gPlayerIndikator[playerid]=1;
+					//GameTextForPlayer(playerid, "~r~turn off", 2000, 6);
+					IndikatorTime[playerid]=0;
+				}
+				else if(gPlayerIndikator[playerid]==1)
+				{
+					new Float:x,Float:y,Float:z,Float:a,tmpcar;
+					//GetPlayerPos(playerid,x,y,z);
+					tmpcar=GetPlayerVehicleID(playerid);
+					if(IsAPlane(tmpcar))return 1;
+					GetVehicleZAngle(tmpcar,a);
+					GetVehiclePos(tmpcar,x,y,z);
+					if(PlayerInfo[playerid][pTurnType]!=1)
+					{
+						IndikatorObjID[playerid]=CreateDynamicObject(19131,x,y,z,0.0,0.0,0.0);
+						if(!IsABigVehicle(tmpcar))
+							AttachDynamicObjectToVehicle(IndikatorObjID[playerid], tmpcar, 0.5, 0.0, 1.5, 0.0,0.0,90.0);
+						else
+							AttachDynamicObjectToVehicle(IndikatorObjID[playerid], tmpcar, 0.5, 0.0, 3.0, 0.0,0.0,90.0);
+							
+					}
+					new m=GetVehicleModel(tmpcar);
+					if(IsValidDynamicObject(CarIndikatorObject[tmpcar][1]))
+					{
+						DestroyDynamicObject(CarIndikatorObject[tmpcar][1]);
+						CarIndikatorObject[tmpcar][1]=0;
+					}
+					if(IsValidDynamicObject(CarIndikatorObject[tmpcar][3]))
+					{
+						DestroyDynamicObject(CarIndikatorObject[tmpcar][3]);
+						CarIndikatorObject[tmpcar][3]=0;
+					}
+					if(PlayerInfo[playerid][pTurnType]!=2)
+					{
+						if(!IsValidDynamicObject(CarIndikatorObject[tmpcar][0]))//caa eaa
+							CarIndikatorObject[tmpcar][0]=CreateDynamicObject(19294,0.0,0.0,0.0, 0.0,0.0,0.0);
+						AttachDynamicObjectToVehicle(CarIndikatorObject[tmpcar][0],tmpcar,CarIndikatorPos[m-400][0][0],CarIndikatorPos[m-400][0][1],CarIndikatorPos[m-400][0][2], 0.0,0.0,0.0);
+						
+						if(!IsValidDynamicObject(CarIndikatorObject[tmpcar][2]))//ia?aa eaa
+							CarIndikatorObject[tmpcar][2]=CreateDynamicObject(19294,0.0,0.0,0.0, 0.0,0.0,0.0);
+						AttachDynamicObjectToVehicle(CarIndikatorObject[tmpcar][2],tmpcar,CarIndikatorPos[m-400][1][0],CarIndikatorPos[m-400][1][1],CarIndikatorPos[m-400][1][2], 0.0,0.0,0.0);
+					}
+					CarAlarms[tmpcar]=0;
+					IndikatorValid[playerid]=1;
+					gPlayerIndikator[playerid]=3;
+					//GameTextForPlayer(playerid, "~r~>right turn>", 2000, 6);
+					IndikatorTime[playerid]=24;
+				}
+			}
+		
+		}
+	}
 	switch(newkeys)
 	{
 	    case KEY_ANALOG_LEFT:
@@ -1839,29 +2604,44 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 	    }
 	    case KEY_YES:
 	    {
-	        switch(gPlayerChangeTruck[playerid])
-	        {
-		        case 1:
-		        {
-		            PlayerTutorial(playerid,2);
-	        	}
-	            case 2:
+			if(gPlayerChangeTruck[playerid]!=0)
+			{
+				switch(gPlayerChangeTruck[playerid])
 				{
-				    if(PlayerInfo[playerid][pPoints]<CarInfo[TruckChange[playerid]][carPoints])
-    				{
-    				    return ShowPlayerDialog(playerid,0,DIALOG_STYLE_MSGBOX,"Выбор грузовика","У вас недостаточно очков, что бы выбрать данный грузовик","Ок","");
-    				}
-				    PlayerTutorial(playerid,3);
+					case 1:
+					{
+						PlayerTutorial(playerid,2);
+					}
+					case 2:
+					{
+						if(PlayerInfo[playerid][pPoints]<CarInfo[TruckChange[playerid]][carPoints])
+						{
+							return ShowPlayerDialog(playerid,0,DIALOG_STYLE_MSGBOX,"Выбор грузовика","У вас недостаточно очков, что бы выбрать данный грузовик","Ок","");
+						}
+						PlayerTutorial(playerid,3);
+					}
+					case 3:
+					{
+						PlayerTutorial(playerid,4);
+					}
+					case 4:
+					{
+						PlayerVehBuy(playerid,3);
+					}
 				}
-				case 3:
+				return 1;
+			}
+			if(IsPlayerInAnyVehicle(playerid))
+			{
+				if(GetPlayerState(playerid)==PLAYER_STATE_DRIVER)
 				{
-				    PlayerTutorial(playerid,4);
-				}
-				case 4:
-				{
-				    PlayerVehBuy(playerid,3);
+					ShowPlayerCarControls(playerid);
 				}
 			}
+			/*else
+			{
+				ShowPlayerPedControls(playerid);
+			}*/
 	    }
 	    case KEY_NO:
 	    {
@@ -2178,7 +2958,6 @@ public OnPlayerDeath(playerid, killerid, reason)
 	OnPlayerDeathAnim(playerid, killerid, reason);
 	return 1;
 }
-
 #include "systems/chatsandphone"
 #include "systems/truckstops"
 #include "systems/tutorial"
@@ -2207,3 +2986,4 @@ public OnPlayerDeath(playerid, killerid, reason)
 #include "systems/registration"
 #include "systems/atm"
 #include "systems/walknpc"
+#include "systems/ymenu"

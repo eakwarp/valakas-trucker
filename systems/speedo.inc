@@ -48,7 +48,7 @@ enum speedoinfo
 	sdcarid,
 	sdstate,
 };
-new SpeedoInfo[speedoinfo];
+new SpeedoInfo[MAX_PLAYERS][speedoinfo];
 new sdstring[255];
 new Float:vPos[4];
 new radarbit[MAX_PLAYERS];
@@ -65,45 +65,58 @@ public PlayerSpeedoUpdate(i)
         PlayerEnterExitTimer(i);
 	    enterexbit[i]=0;
 	}
-    SpeedoInfo[sdstate]=GetPlayerState(i);
-	if(SpeedoInfo[sdstate]==PLAYER_STATE_DRIVER)
+    SpeedoInfo[i][sdstate]=GetPlayerState(i);
+	if(SpeedoInfo[i][sdstate]==PLAYER_STATE_DRIVER)
 	{
-	    SpeedoInfo[sdcarid]=GetPlayerVehicleID(i);
+	    SpeedoInfo[i][sdcarid]=GetPlayerVehicleID(i);
 		if(gSpeedo[i] == 2 || gSpeedo[i] == 0)
 		{
-		    GetVehicleVelocity(SpeedoInfo[sdcarid], vPos[1], vPos[2], vPos[3]);
+		    GetVehicleVelocity(SpeedoInfo[i][sdcarid], vPos[1], vPos[2], vPos[3]);
 		    PlayerInfo[i][pSpeed]=floatmul(floatsqroot(floatadd(floatpower(vPos[1], 2), floatadd(floatpower(vPos[2], 2), floatpower(vPos[3], 2)))), 200)/1.4;
 		    if(PlayerInfo[i][pSpeed]<1)
 				format(sdstring,sizeof(sdstring),"%s~n~~g~Hunger: ~b~%0.1f ~g~per~n~~g~Fatigue: ~b~%0.1f ~g~per~n~~g~Gear: ~w~R ~r~N ~w~D",SignalSetString(i),PlayerInfo[i][pHunger],PlayerInfo[i][pFatigue]);
-			else if(IsVehicleDrivingBackwards(SpeedoInfo[sdcarid],vPos[1], vPos[2]))
+			else if(IsVehicleDrivingBackwards(SpeedoInfo[i][sdcarid],vPos[1], vPos[2]))
 				format(sdstring,sizeof(sdstring),"%s~n~~g~Hunger: ~b~%0.1f ~g~per~n~~g~Fatigue: ~b~%0.1f ~g~per~n~~g~Gear: ~r~R ~w~N D",SignalSetString(i),PlayerInfo[i][pHunger],PlayerInfo[i][pFatigue]);
 		    else
 				format(sdstring,sizeof(sdstring),"%s~n~~g~Hunger: ~b~%0.1f ~g~per~n~~g~Fatigue: ~b~%0.1f ~g~per~n~~g~Gear: ~w~R N ~r~D",SignalSetString(i),PlayerInfo[i][pHunger],PlayerInfo[i][pFatigue]);
-			if(Gas[SpeedoInfo[sdcarid]]<10.0)
+			switch(gPlayerIndikator[i])
+			{
+				case 1:
+					strcat(sdstring,"~n~~b~ < Turn >");
+				case 2:
+				{
+					strcat(sdstring,"~n~~y~ < ~r~Turn ~b~>");
+				}
+				case 3:
+				{
+					strcat(sdstring,"~n~~b~ < ~r~Turn ~y~>");
+				}
+			}
+			if(Gas[SpeedoInfo[i][sdcarid]]<10.0)
 			{
 			    switch(gasbit[i])
 			    {
 			        case 0:
 			        {
-			         	format(sdstring,sizeof(sdstring),"%s~n~~g~Fuel: ~b~%0.1f ~g~per ~w~.",sdstring,Gas[SpeedoInfo[sdcarid]]);
+			         	format(sdstring,sizeof(sdstring),"%s~n~~g~Fuel: ~b~%0.1f ~g~per ~w~.",sdstring,Gas[SpeedoInfo[i][sdcarid]]);
 			            gasbit[i]=1;
 		         	}
 			        case 1:
 			        {
-			         	format(sdstring,sizeof(sdstring),"%s~n~~g~Fuel: ~b~%0.1f ~g~per ~r~.",sdstring,Gas[SpeedoInfo[sdcarid]]);
+			         	format(sdstring,sizeof(sdstring),"%s~n~~g~Fuel: ~b~%0.1f ~g~per ~r~.",sdstring,Gas[SpeedoInfo[i][sdcarid]]);
 			            gasbit[i]=0;
 			        }
 			    }
 			}
 			else
-			 	format(sdstring,sizeof(sdstring),"%s~n~~g~Fuel: ~b~%0.1f ~g~per",sdstring,Gas[SpeedoInfo[sdcarid]]);
+			 	format(sdstring,sizeof(sdstring),"%s~n~~g~Fuel: ~b~%0.1f ~g~per",sdstring,Gas[SpeedoInfo[i][sdcarid]]);
 			if(g_fSpeedCap[i] > 0.0)
 				format(sdstring,sizeof(sdstring),"%s~n~~g~Speed: ~b~%0.1f ~g~mph~r~ (%d)",sdstring,PlayerInfo[i][pSpeed],SpeedLimit[i]);
 		    else
 		    {
 				format(sdstring,sizeof(sdstring),"%s~n~~g~Speed: ~b~%0.1f ~g~mph",sdstring,PlayerInfo[i][pSpeed]);
 			}
-			if(PlayerInfo[i][pCarID]==SpeedoInfo[sdcarid])
+			if(PlayerInfo[i][pCarID]==SpeedoInfo[i][sdcarid])
 	    	{
 	    	    radarbit[i]++;
 				if(radarbit[i]==3)
@@ -124,10 +137,11 @@ public PlayerSpeedoUpdate(i)
 				    {
 						if(RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]!=radarspeedbit[i])
 						{
-							new st[24];
-							format(st,sizeof(st),"%f",RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
-						    radarspeedbit[i]=strval(st);
-						    cmd_speedlimit(i,radarspeedbit[i]);
+							//new st[24];
+							//format(st,sizeof(st),"%0.1f",RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
+						    radarspeedbit[i]=floatround(RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
+							SetCarSpeedLimit(i,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
+						    //cmd_speedlimit(i,st);
 						}
 				    }
 					else
@@ -147,11 +161,11 @@ public PlayerSpeedoUpdate(i)
 						switch(PlayerRadarDetect[i])
 						{
 						    case 1:
-					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%d):", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
+					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%0.1f):", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
 					    	case 2:
-					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%d)::", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
+					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%0.1f)::", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
 					    	case 3:
-					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%d):::", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
+					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%0.1f):::", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
       						default:
 					    	    format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~b~clear", sdstring);
 					    }
@@ -163,11 +177,11 @@ public PlayerSpeedoUpdate(i)
 						switch(PlayerRadarDetect[i])
 						{
 						    case 1:
-					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%d)~y~:", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
+					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%0.1f)~y~:", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
 					    	case 2:
-					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%d)~y~::", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
+					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%0.1f)~y~::", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
 					    	case 3:
-					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%d)~y~:::", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
+					    		format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~r~(%0.1f)~y~:::", sdstring,RadarInfo[PlayerRadarDetectID[i]][radarMaxSpeed]);
 					    	default:
 					    	    format(sdstring, sizeof(sdstring), "%s~n~~g~Radar: ~b~clear", sdstring);
 					    }

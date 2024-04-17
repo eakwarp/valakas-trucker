@@ -919,18 +919,6 @@ public OnPlayerEnterVehicle(playerid, vehicleid, ispassenger)
 	return 1;
 }
 
-public OnPlayerStateChange(playerid, newstate, oldstate)
-{
-    Spec(playerid,0,4);
-    return 1;
-}
-
-public OnPlayerExitVehicle(playerid, vehicleid)
-{
-    Spec(playerid,0,4);
-    return 1;
-}
-
 COMMAND:spec(playerid,params[])
 {
 	new specid;
@@ -1106,5 +1094,19 @@ stock VehDialogResponse(playerid,response,listitem,inputtext[])
 	CreatedCar ++;
 	format(string, sizeof(string), "Транспортное средство %d(%s[%d]) создано.", carid,CarNames[car-400],car);
 	SendClientMessage(playerid, COLOR_GREY, string);
+	return 1;
+}
+
+COMMAND:weatherall(playerid,params[])
+{
+    if(PlayerInfo[playerid][pAdmin] < 1)
+	    return SendClientMessage(playerid, COLOR_GRAD1, "   У Вас недостаточно прав для того, чтобы использовать эту команду!");
+	new weather;
+	if(sscanf(params, "i", weather))
+	    return SendClientMessage(playerid, COLOR_WHITE, "{ffcc99}Используйте: {d5d5d5}/weatherall [id погоды]");
+	if(weather < 0||weather > 45)
+		return SendClientMessage(playerid, COLOR_GREY, "   ID погоды не может быть менее 0 и более 45!");
+	SetWeather(weather);
+	SendClientMessage(playerid, COLOR_GREY, "   Погода установлена для всех!");
 	return 1;
 }

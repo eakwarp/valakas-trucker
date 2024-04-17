@@ -543,7 +543,7 @@ stock GetClosestCarInRadiusNearPlayer(playerid, Float:radius,bit=0)
 	return id;
 }
 
-stock IsValidNickname(playerid)
+stock IsValidRPNickname(playerid)
 {
 	new name[MAX_PLAYER_NAME];
 	GetPlayerName(playerid,name, sizeof name);
@@ -559,6 +559,56 @@ stock IsValidNickname(playerid)
 	return 1;
 }
 
+stock IsABigVehicle(vehicle)
+{
+	new m=GetVehicleModel(vehicle);
+	switch(m)
+	{
+	    case 403,
+		406,
+		407,
+		408,
+		413,
+		414,
+		416,
+		423,
+		427,
+		428,
+		431,
+		433,
+		435,
+		437,
+		443,
+		450,
+		455,
+		456,
+		486,
+		498,
+		508,
+		514,
+		515,
+		524,
+		544,
+		573,
+		578,
+		584,
+		588,
+		591,
+		601,
+		609: return 1;
+	    default: return 0;
+	}
+	return 0;
+}
+
+stock IsAPlane(carid)
+{
+	switch(GetVehicleModel(carid))
+	{
+	    case 592,577,511,512,593,520,553,476,519,460,513,548,425,417,487,488,497,563,447,469:return 1;
+	}
+	return 0;
+}
 
 stock NoNum(str[])
 {
