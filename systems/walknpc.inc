@@ -4,6 +4,7 @@ new PlayeridToWNPCid[2048];
 //#define WALKNPC_NODESRELOAD 10000
 #define WNPCTimerTime 100
 #define FCNPC_MOVE_SPEED_WALK      (0.1552086)
+/*
 //natives
 native NPC_Create(const name[]);
 native NPC_Destroy(npcid);
@@ -20,7 +21,7 @@ native NPC_StopMove(npcid);
 //Callbacks:
 forward OnNPCFinishMove(npcid);
 forward OnNPCConnect(npcid);
-forward OnNPCDisconnect(npcid);
+forward OnNPCDisconnect(npcid);*/
 
 forward Float:GetDistanceXYZtoXYZ(Float:x1,Float:y1,Float:z1,Float:x2,Float:y2,Float:z2);
 public Float:GetDistanceXYZtoXYZ(Float:x1,Float:y1,Float:z1,Float:x2,Float:y2,Float:z2)
@@ -149,7 +150,7 @@ public SQL_LoadWalkNPC(i)
 		cache_get_value_name_int(0,"EndTime",WalkNPC[i][walknpc_EndTime]);
 		if(WalkNPC[i][walknpc_Valid]==1)
 		{
-			WalkNPC[i][walknpc_ID]=NPC_Create(WalkNPC[i][walknpc_Name]);
+			NPC_Create(WalkNPC[i][walknpc_Name]);
 			//WalkNPC[i][walknpc_ID]=PED_Connect(WalkNPC[i][walknpc_Skin] ,WalkNodeInfo[WalkNPC[i][walknpc_StartNode]][walknodeX],WalkNodeInfo[WalkNPC[i][walknpc_StartNode]][walknodeY],WalkNodeInfo[WalkNPC[i][walknpc_StartNode]][walknodeZ], 0.0);
 			WalkNPCPosX[i]=WalkNodeInfo[WalkNPC[i][walknpc_StartNode]][walknodeX];
 			WalkNPCPosY[i]=WalkNodeInfo[WalkNPC[i][walknpc_StartNode]][walknodeY];
@@ -157,7 +158,6 @@ public SQL_LoadWalkNPC(i)
 			PlayeridToWNPCid[WalkNPC[i][walknpc_ID]]=i;
 			//PED_SetWalkingStyle(WalkNPC[i][walknpc_ID], 1);
 			//PreloadActorAnimations(WalkNPC[i][walknpc_ID]);
-			SetTimerEx("WalkNPCStartMove", 10000, 0, "d", i);
 			WalkNPC[i][walknpc_Created]=1;
 			//WalkNPCStartMove(i);
 			
@@ -173,13 +173,17 @@ public SQL_LoadWalkNPC(i)
 	i++;
 	if(i<MAX_WALKNPC-1)
 	{
-		SetTimerEx("LoadWalkNPCs", 300, 0, "d", i);
+		SetTimerEx("LoadWalkNPCs", 10, 0, "d", i);
 	}
 	return 1;
 }
 
 public OnNPCConnect(npcid)
 {
+	WalkNPC[npcid][walknpc_ID]=npcid;
+	SetTimerEx("SpawnNPCTimer", 10, 0, "d", npcid);
+	//dummy id
+
     /*for(new i; i<MAX_WALKNPC; i++)
 	{
 		if(WalkNPC[i][walknpc_Valid]==1)
@@ -198,17 +202,18 @@ public OnNPCConnect(npcid)
     }*/
     return 1;
 }
-/*
-forward SpawnNPCTimer(npcid,i);
-public SpawnNPCTimer(npcid,i)
+
+forward SpawnNPCTimer(npcid);
+public SpawnNPCTimer(npcid)
 {
     //printf("npc %d wnpc %d spawned via timer",npcid,i);
-    //NPC_Spawn(npcid);
-    SetTimerEx("WalkNPCStartMove", 10000, 1, "d", i);
+    NPC_Spawn(npcid);
+	new i=npcid;
+    SetTimerEx("WalkNPCStartMove", 10, 0, "d", i);
     printf("npc %d walk start timer",npcid);
     //WalkNPCStartMove(i);
     return 1;
-}*/
+}
 stock UpdateWalkNPC(i)
 {
     new query[255];
@@ -772,7 +777,7 @@ COMMAND:wnpc(playerid,params[])
 {
     if(PlayerInfo[playerid][pAdmin]==0)return 1;
 	if(isnull(params))
-		return SendClientMessage(playerid, COLOR_GRAD2, "/wnpc list add delete check");
+		return SendClientMessage(playerid, COLOR_GRAD2, "/wnpc list add delete check stopall startall restartall");
 	new cmd[32],tmp[255];
 	sscanf(params, "s[32]s[255]", cmd,tmp);
 	if(strcmp(cmd, "list", true) == 0)
@@ -882,6 +887,39 @@ COMMAND:wnpc(playerid,params[])
 		SendClientMessage(playerid,COLOR_WHITE,str);
 		return 1;
 	}
+	else if(strcmp(cmd, "stopall", true) == 0)
+	{
+		for(new i=0; i<MAX_WALKNPC; i++)
+		{
+		    if(WalkNPC[i][walknpc_Valid]==1)
+			{
+				NPC_StopMove(WalkNPC[i][walknpc_ID]);
+			}
+		}
+		SendClientMessage(playerid,COLOR_WHITE,"Все ходячие остановлены");
+	}
+	else if(strcmp(cmd, "startall", true) == 0)
+	{
+		for(new i=0; i<MAX_WALKNPC; i++)
+		{
+		    if(WalkNPC[i][walknpc_Valid]==1)
+			{
+				NPC_Move(WalkNPC[i][walknpc_ID], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeZ], 1);
+			}
+		}
+		SendClientMessage(playerid,COLOR_WHITE,"Все ходячие запущены");
+	}
+	else if(strcmp(cmd, "restartall", true) == 0)
+	{
+		for(new i=0; i<MAX_WALKNPC; i++)
+		{
+		    if(WalkNPC[i][walknpc_Valid]==1)
+			{
+				WalkNPCStartMove(i);
+			}
+		}
+		SendClientMessage(playerid,COLOR_WHITE,"Все ходячие перезапущены");
+	}
 	return 1;
 }
 forward WalkNPCStartMove(i);
@@ -899,12 +937,14 @@ public WalkNPCStartMove(i)
 public OnNPCFinishMove(npcid)
 {
     printf("npc %d, finish move",npcid);
-	new i=PlayeridToWNPCid[npcid];
-	WNPCNextNode(i);
+	NPC_StopMove(npcid);
+	//new i=PlayeridToWNPCid[npcid];
+	SetTimerEx("WNPCNextNode", 1000, 0, "d", npcid);
+	//WNPCNextNode(npcid);
 	return 1;
 }
-
-stock WNPCNextNode(npcid)
+forward WNPCNextNode(npcid);
+public WNPCNextNode(npcid)
 {
     new i=npcid;
 	new thisnodeid=WalkNPC[i][walknpc_NextNode];
@@ -956,11 +996,15 @@ stock WNPCNextNode(npcid)
 		nextnodeid=nd[nextnode];
 	}
    	WalkNPC[i][walknpc_OldNode]=thisnodeid;
-	
-	NPC_SetPos(WalkNPC[i][walknpc_ID],WalkNodeInfo[thisnodeid][walknodeX],WalkNodeInfo[thisnodeid][walknodeY],WalkNodeInfo[thisnodeid][walknodeZ]);
-	NPC_Move(WalkNPC[i][walknpc_ID], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeZ], 1);
-    
 	WalkNPC[i][walknpc_NextNode]=nextnodeid;
+	//NPC_StopMove(WalkNPC[i][walknpc_ID]);
+	//NPC_SetPos(WalkNPC[i][walknpc_ID],WalkNodeInfo[thisnodeid][walknodeX],WalkNodeInfo[thisnodeid][walknodeY],WalkNodeInfo[thisnodeid][walknodeZ]);
+	NPC_Move(WalkNPC[i][walknpc_ID], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeZ], 1);
+    new str[144];
+	format(str,sizeof(str),"[NPC %d(%s), current node %d, next node %d]",i,WalkNPC[i][walknpc_Name],thisnodeid,nextnodeid);
+	ProxDetector(10.0, i, str, COLOR_FADE1,COLOR_FADE2,COLOR_FADE3,COLOR_FADE4,COLOR_FADE5);
+
+	printf("npc %d, moved to nextnode %d",i,nextnodeid);
 	return 1;
 }
 

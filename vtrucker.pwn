@@ -3,6 +3,26 @@
 #define DISABLE_MODERATE_REGISTRATION //if defined - new players automatically accepted.
 #define INGAMEREGISTER //
 #define DISABLE_RP_NAMES
+
+native NPC_Create(const name[]);
+native NPC_Destroy(npcid);
+native NPC_IsValid(npcid);
+native NPC_Spawn(npcid);
+native NPC_SetPos(npcid, Float:x, Float:y, Float:z);
+native NPC_GetPos(npcid, &Float:x, &Float:y, &Float:z);
+native NPC_SetRot(npcid, Float:x, Float:y, Float:z);
+native NPC_GetRot(npcid, &Float:x, &Float:y, &Float:z);
+native NPC_SetVirtualWorld(npcid, vw);
+native NPC_GetVirtualWorld(npcid, &vw);
+native NPC_Move(npcid, Float:x, Float:y, Float:z, moveType);
+native NPC_StopMove(npcid);
+
+forward OnNPCFinishMove(npcid);
+forward OnNPCConnect(npcid);
+forward OnNPCDisconnect(npcid);
+
+
+
 /*
 	Original developing by Eakwarp
 	todo:
@@ -754,6 +774,8 @@ new PlayerIP[MAX_PLAYERS][16];
 new speedotimer[MAX_PLAYERS];
 public OnPlayerConnect(playerid)
 {
+	if(NPC_IsValid(playerid))
+		return 1;
     SetPVarInt(playerid,"DialogID",-1);
     if (!IsPlayerNPC(playerid))
 	{
@@ -964,6 +986,8 @@ COMMAND:pay(playerid, params[])
 
 public OnPlayerStateChange(playerid, newstate, oldstate)
 {
+	if(NPC_IsValid(playerid))
+		return 1;
 	Spec(playerid,0,4);
 	if(oldstate == PLAYER_STATE_DRIVER)
 	{
@@ -1326,6 +1350,8 @@ COMMAND:turn(playerid,params[])
 
 public OnPlayerSpawn(playerid)
 {
+	if(NPC_IsValid(playerid))
+		return 1;
 	if(!PlayerInfo[playerid][pLogin])
 		return Kick(playerid);
     PreloadAnimLibs(playerid);
@@ -1367,6 +1393,8 @@ public OnPlayerSpawn(playerid)
 
 public OnPlayerRequestClass(playerid, classid)
 {
+	if(NPC_IsValid(playerid))
+		return 1;
 	SetupPlayerForClassSelection(playerid);
 	return 1;
 }
