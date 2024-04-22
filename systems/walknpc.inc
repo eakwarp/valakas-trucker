@@ -150,7 +150,8 @@ public SQL_LoadWalkNPC(i)
 		cache_get_value_name_int(0,"EndTime",WalkNPC[i][walknpc_EndTime]);
 		if(WalkNPC[i][walknpc_Valid]==1)
 		{
-			NPC_Create(WalkNPC[i][walknpc_Name]);
+			WalkNPC[i][walknpc_ID]=NPC_Create(WalkNPC[i][walknpc_Name]);
+			printf("WNPC %d created, NPCID %d",i,WalkNPC[i][walknpc_ID]);
 			//WalkNPC[i][walknpc_ID]=PED_Connect(WalkNPC[i][walknpc_Skin] ,WalkNodeInfo[WalkNPC[i][walknpc_StartNode]][walknodeX],WalkNodeInfo[WalkNPC[i][walknpc_StartNode]][walknodeY],WalkNodeInfo[WalkNPC[i][walknpc_StartNode]][walknodeZ], 0.0);
 			WalkNPCPosX[i]=WalkNodeInfo[WalkNPC[i][walknpc_StartNode]][walknodeX];
 			WalkNPCPosY[i]=WalkNodeInfo[WalkNPC[i][walknpc_StartNode]][walknodeY];
@@ -178,12 +179,12 @@ public SQL_LoadWalkNPC(i)
 	return 1;
 }
 
-public OnNPCConnect(npcid)
+public OnNPCCreate(npcid)
 {
-	WalkNPC[npcid][walknpc_ID]=npcid;
-	SetTimerEx("SpawnNPCTimer", 10, 0, "d", npcid);
+	//WalkNPC[npcid][walknpc_ID]=npcid;
+	//SetTimerEx("SpawnNPCTimer", 10, 0, "d", npcid);
 	//dummy id
-
+	SpawnNPCTimer(npcid);
     /*for(new i; i<MAX_WALKNPC; i++)
 	{
 		if(WalkNPC[i][walknpc_Valid]==1)
@@ -208,8 +209,7 @@ public SpawnNPCTimer(npcid)
 {
     //printf("npc %d wnpc %d spawned via timer",npcid,i);
     NPC_Spawn(npcid);
-	new i=npcid;
-    SetTimerEx("WalkNPCStartMove", 10, 0, "d", i);
+    SetTimerEx("WalkNPCStartMove", 10, 0, "d", PlayeridToWNPCid[npcid]);
     printf("npc %d walk start timer",npcid);
     //WalkNPCStartMove(i);
     return 1;
@@ -880,6 +880,7 @@ COMMAND:wnpc(playerid,params[])
         if(WalkNPC[i][walknpc_Created]==1)
         {
 	        WalkNPC[i][walknpc_Created]=0;
+			NPC_Destroy(WalkNPC[i][walknpc_ID]);
 		}
 		UpdateWalkNPC(i);
         new str[144];
@@ -936,10 +937,11 @@ public WalkNPCStartMove(i)
 
 public OnNPCFinishMove(npcid)
 {
-    printf("npc %d, finish move",npcid);
-	NPC_StopMove(npcid);
+    printf("NPC %d, finish move",npcid);
+	//NPC_StopMove(npcid);
 	//new i=PlayeridToWNPCid[npcid];
-	SetTimerEx("WNPCNextNode", 1000, 0, "d", npcid);
+	//PlayeridToWNPCid[WalkNPC[i][walknpc_ID]]=i;
+	SetTimerEx("WNPCNextNode", 1000, 0, "d", PlayeridToWNPCid[npcid]);
 	//WNPCNextNode(npcid);
 	return 1;
 }
@@ -1002,9 +1004,9 @@ public WNPCNextNode(npcid)
 	NPC_Move(WalkNPC[i][walknpc_ID], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeZ], 1);
     new str[144];
 	format(str,sizeof(str),"[NPC %d(%s), current node %d, next node %d]",i,WalkNPC[i][walknpc_Name],thisnodeid,nextnodeid);
-	ProxDetector(10.0, i, str, COLOR_FADE1,COLOR_FADE2,COLOR_FADE3,COLOR_FADE4,COLOR_FADE5);
+	ProxDetector(40.0, WalkNPC[i][walknpc_ID], str, COLOR_FADE1,COLOR_FADE2,COLOR_FADE3,COLOR_FADE4,COLOR_FADE5);
 
-	printf("npc %d, moved to nextnode %d",i,nextnodeid);
+	printf("wnpc %d, moved to nextnode %d",i,nextnodeid);
 	return 1;
 }
 

@@ -18,8 +18,8 @@ native NPC_Move(npcid, Float:x, Float:y, Float:z, moveType);
 native NPC_StopMove(npcid);
 
 forward OnNPCFinishMove(npcid);
-forward OnNPCConnect(npcid);
-forward OnNPCDisconnect(npcid);
+forward OnNPCCreate(npcid);
+forward OnNPCDestroy(npcid);
 
 
 
