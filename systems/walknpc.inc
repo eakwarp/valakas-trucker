@@ -179,6 +179,7 @@ public SQL_LoadWalkNPC(i)
 	return 1;
 }
 
+
 public OnNPCCreate(npcid)
 {
 	//WalkNPC[npcid][walknpc_ID]=npcid;
@@ -941,8 +942,8 @@ public OnNPCFinishMove(npcid)
 	//NPC_StopMove(npcid);
 	//new i=PlayeridToWNPCid[npcid];
 	//PlayeridToWNPCid[WalkNPC[i][walknpc_ID]]=i;
-	SetTimerEx("WNPCNextNode", 1000, 0, "d", PlayeridToWNPCid[npcid]);
-	//WNPCNextNode(npcid);
+	//SetTimerEx("WNPCNextNode", 100, 0, "d", PlayeridToWNPCid[npcid]);
+	WNPCNextNode(npcid);
 	return 1;
 }
 forward WNPCNextNode(npcid);
@@ -1002,10 +1003,10 @@ public WNPCNextNode(npcid)
 	//NPC_StopMove(WalkNPC[i][walknpc_ID]);
 	//NPC_SetPos(WalkNPC[i][walknpc_ID],WalkNodeInfo[thisnodeid][walknodeX],WalkNodeInfo[thisnodeid][walknodeY],WalkNodeInfo[thisnodeid][walknodeZ]);
 	NPC_Move(WalkNPC[i][walknpc_ID], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeX], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeY], WalkNodeInfo[WalkNPC[i][walknpc_NextNode]][walknodeZ], 1);
-    new str[144];
+/*    new str[144];
 	format(str,sizeof(str),"[NPC %d(%s), current node %d, next node %d]",i,WalkNPC[i][walknpc_Name],thisnodeid,nextnodeid);
 	ProxDetector(40.0, WalkNPC[i][walknpc_ID], str, COLOR_FADE1,COLOR_FADE2,COLOR_FADE3,COLOR_FADE4,COLOR_FADE5);
-
+*/
 	printf("wnpc %d, moved to nextnode %d",i,nextnodeid);
 	return 1;
 }
