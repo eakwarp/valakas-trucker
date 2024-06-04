@@ -210,6 +210,7 @@ public SpawnNPCTimer(npcid)
 {
     //printf("npc %d wnpc %d spawned via timer",npcid,i);
     NPC_Spawn(npcid);
+	SetPlayerSkin(npcid,WalkNPC[PlayeridToWNPCid[npcid]][walknpc_Skin]);
     SetTimerEx("WalkNPCStartMove", 10, 0, "d", PlayeridToWNPCid[npcid]);
     printf("npc %d walk start timer",npcid);
     //WalkNPCStartMove(i);
@@ -938,7 +939,7 @@ public WalkNPCStartMove(i)
 
 public OnNPCFinishMove(npcid)
 {
-    printf("NPC %d, finish move",npcid);
+   // printf("NPC %d, finish move",npcid);
 	//NPC_StopMove(npcid);
 	//new i=PlayeridToWNPCid[npcid];
 	//PlayeridToWNPCid[WalkNPC[i][walknpc_ID]]=i;
